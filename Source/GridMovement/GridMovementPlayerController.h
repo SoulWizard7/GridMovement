@@ -60,6 +60,15 @@ public:
 
 	UFUNCTION()
 	void DebugStuff();
+
+	UFUNCTION()
+	void LeftMouseButton();
+
+	UFUNCTION()
+	void RightMouseButton();
+
+	UFUNCTION()
+	void CheckCurrentMousePosition(bool MouseGridPositionIsValid);
 	
 
 protected:

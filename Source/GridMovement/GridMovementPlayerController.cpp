@@ -29,58 +29,16 @@ void AGridMovementPlayerController::DebugStuff()
 	Char->DebugCover();	
 }
 
-bool AGridMovementPlayerController::GetCurrentMouseGridPosition()
+void AGridMovementPlayerController::LeftMouseButton()
 {
-	//I have stacked checks here, to be able to use GetHitResultUnderCursor helper function from Controller
-	
-	FHitResult Hit;
-	GetHitResultUnderCursor(ECC_Visibility, true, Hit);
-	CurrentMouseGridPosition = Hit.Location;	
-
-	//Check if mousepos is Walkable
-	
-	if(Hit.GetActor())
-	{		
-		if(!Hit.GetActor()->FindComponentByClass<UGMWalkableSurfaceComponent>())
-		{
-			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MousePosition is not valid", true, FVector2D(1.f));
-			return false;
-		}
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "Actor has WalkComponent ", true, FVector2D(1.f));		
-	}
-
-	//Check if mousepos normal is valid
-
-	float normalZ = abs(Hit.Normal.Z);
-	if(normalZ < 0.9f) return false;
-
-	//Round the mousepos to 1m
-
-	float x = CurrentMouseGridPosition.X / 100;
-	float y = CurrentMouseGridPosition.Y / 100;
-	x = round(x);
-	y = round(y);
-	CurrentMouseGridPosition.X = x * 100;
-	CurrentMouseGridPosition.Y = y * 100;	
-
-	FString msg1 = CurrentMouseGridPosition.ToString();
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, msg1, true, FVector2D(1.f));
-	
-	if (CurrentMouseGridPosition.Size2D() != LastMouseGridPosition.Size2D())
-	{
-		LastMouseGridPosition = CurrentMouseGridPosition;
-		hasNewPosition = true;		
-	}	
-	return true;
 }
 
-
-void AGridMovementPlayerController::PlayerTick(float DeltaTime)
+void AGridMovementPlayerController::RightMouseButton()
 {
-	Super::PlayerTick(DeltaTime);
+}
 
-	MouseGridPositionIsValid = GetCurrentMouseGridPosition();
-
+void AGridMovementPlayerController::CheckCurrentMousePosition(bool MouseGridPositionIsValid)
+{
 	if(MouseGridPositionIsValid)
 	{
 		if(hasNewPosition)
@@ -127,6 +85,60 @@ void AGridMovementPlayerController::PlayerTick(float DeltaTime)
 	{
 		CanMoveToPosition = false;
 	}
+}
+
+bool AGridMovementPlayerController::GetCurrentMouseGridPosition()
+{
+	//I have stacked checks here, to be able to use GetHitResultUnderCursor helper function from Controller
+	
+	FHitResult Hit;
+	GetHitResultUnderCursor(ECC_Visibility, true, Hit);
+	CurrentMouseGridPosition = Hit.Location;	
+
+	//Check if mousepos is Walkable
+	
+	if(Hit.GetActor())
+	{		
+		if(!Hit.GetActor()->FindComponentByClass<UGMWalkableSurfaceComponent>())
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MousePosition is not valid", true, FVector2D(1.f));
+			return false;
+		}
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "Actor has WalkComponent ", true, FVector2D(1.f));		
+	}
+
+	//Check if mousepos normal is valid
+
+	float normalZ = abs(Hit.Normal.Z);
+	if(normalZ < 0.9f) return false;
+
+	//Round the mousepos to 1m
+
+	float x = CurrentMouseGridPosition.X / 100;
+	float y = CurrentMouseGridPosition.Y / 100;
+	x = round(x);
+	y = round(y);
+	CurrentMouseGridPosition.X = x * 100;
+	CurrentMouseGridPosition.Y = y * 100;	
+
+	FString msg1 = CurrentMouseGridPosition.ToString();
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, msg1, true, FVector2D(1.f));
+	
+	if (CurrentMouseGridPosition.Size2D() != LastMouseGridPosition.Size2D())
+	{
+		LastMouseGridPosition = CurrentMouseGridPosition;
+		hasNewPosition = true;		
+	}	
+	return true;
+}
+
+void AGridMovementPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+
+	//MouseGridPositionIsValid = GetCurrentMouseGridPosition();
+
+	CheckCurrentMousePosition(GetCurrentMouseGridPosition());
 
 	if(bInputPressed)
 	{
@@ -171,10 +183,6 @@ void AGridMovementPlayerController::OnSetDestinationReleased()
 				Char->MoveToLocation(CurrentMouseGridPosition);
 				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CurrentMouseGridPosition, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
 			}
-		}
-		
-		// We move there and spawn some particles
-		//UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, HitLocation);		
-		//Navigate(FindPathToLocation(HitLocation));
+		}		
 	}
 }
