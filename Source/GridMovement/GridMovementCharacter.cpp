@@ -58,7 +58,7 @@ void AGridMovementCharacter::BeginPlay()
 	}
 	else
 	{
-		GridMovementPlayerController->Char = this;
+		//GridMovementPlayerController->Char = this;
 		//GridMovementPlayerController->PathPointCheckComponent = FindComponentByClass<UGMPathPointCheckComponent>();
 	}
 }

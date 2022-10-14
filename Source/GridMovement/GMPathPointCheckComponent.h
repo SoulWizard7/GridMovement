@@ -25,6 +25,8 @@ public:
 	bool SouthFullCover;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Cover Struct")
 	bool WestFullCover;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Cover Struct")
+	bool CanMoveToPosition;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -39,7 +41,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable)
-	bool CheckIfMouseGridPositionIsValid(FVector MousePosition);
+	bool CheckIfMouseGridPositionHasActorsOnTop(FVector MousePosition);
 
 	UFUNCTION(BlueprintCallable)
 	void DeactivateAllCoverBools();

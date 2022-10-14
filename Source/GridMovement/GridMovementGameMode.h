@@ -13,6 +13,8 @@ class AGridMovementGameMode : public AGameModeBase
 
 public:
 	AGridMovementGameMode();
+
+	
 };
 
 

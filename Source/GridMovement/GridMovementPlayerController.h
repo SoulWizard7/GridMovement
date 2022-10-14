@@ -3,16 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Templates/SubclassOf.h"
-//#include "GameFramework/PlayerController.h"
-#include "GMNavigatorComponent.h"
 #include "GMPathPointCheckComponent.h"
+#include "GMUnitSelectorComponent.h"
 #include "GridMovementCharacter.h"
 #include "GridMovementPlayerController.generated.h"
 
-class AGridMovementCharacter;
-/** Forward declaration to improve compiling times */
+class AGMUnit;
 class UNiagaraSystem;
+class AGMCoverIconDisplay;
+class AGMCombatManager;
 
 UCLASS()
 class AGridMovementPlayerController : public APlayerController
@@ -31,17 +30,56 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UNiagaraSystem* FXCursor;
 
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AGMCoverIconDisplay> CoverIconDisplayBlueprint;
+
+	UPROPERTY()
+	AGMCoverIconDisplay* CoverIconDisplay;
+
+	UFUNCTION()
+	void TryMoveUnit();	
+
+	///////////////////////////////////////////
+	//Combat Manager and Combat Functions////
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AGMCombatManager> CombatManagerBluePrint;
+
+	UPROPERTY()
+	AGMCombatManager* CombatManager;
+
+	UFUNCTION(BlueprintCallable)
+	void StartCombat();
+
+	UFUNCTION(BlueprintCallable)
+	void EndCombat();
+
+	UPROPERTY(BlueprintReadWrite)
+	bool CombatIsOn;
+
+	UFUNCTION()
+	void CombatManagerEndPlayerTurn();
+	
 	UPROPERTY(EditAnywhere)
-	AGridMovementCharacter* Char;
+	AGMUnit* CurrentUnit;
 
 	UPROPERTY(BlueprintReadOnly)
 	UGMPathPointCheckComponent* PathPointCheckComponent;
 
+	UPROPERTY(BlueprintReadOnly)
+	UGMUnitSelectorComponent* UnitSelectorComponent;
+
 	UFUNCTION()
-	bool GetCurrentMouseGridPosition();
+	void TryAttackUnit();
+
+	///////////////////////////////////////////
+	// Mouse position functions            ////
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector CurrentMouseGridPosition;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector CurrentMousePosition;
 	
 	UPROPERTY(BlueprintReadOnly)
 	FVector LastMouseGridPosition;
@@ -49,27 +87,47 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FVector> PathToCurrentMouseGridPosition;
 
-	UPROPERTY(BlueprintReadOnly)
-	bool hasNewPosition;
+	UFUNCTION()
+	void SetCurrentMousePositionHitResult();
 
-	UPROPERTY(BlueprintReadWrite)
-	bool MouseGridPositionIsValid;
+	UPROPERTY()
+	FHitResult CurrentMousePositionHitResult;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool CanMoveToPosition;
+	UFUNCTION()
+	void SetCurrentMouseGridPosition();
+
+	UFUNCTION()
+	bool IsCurrentMouseGridPositionValidMovementPosition(FHitResult Hit);
+	
+	UFUNCTION()
+	void MarkUnitsOnHover();
+
+	UPROPERTY()
+	AGMUnit* CurrentHoveredUnit;
 
 	UFUNCTION()
 	void DebugStuff();
 
+	///////////////////////////////////////////
+	// INPUT
+	
+	UFUNCTION(BlueprintCallable)
+	void EnablePlayerInput();
+	
 	UFUNCTION()
 	void LeftMouseButton();
 
 	UFUNCTION()
 	void RightMouseButton();
 
+	///////////////////////////////////////////
+
 	UFUNCTION()
-	void CheckCurrentMousePosition(bool MouseGridPositionIsValid);
-	
+	void SelectUnit();	
+	void SelectUnit(AGMUnit* Unit);
+
+	UFUNCTION()
+	void DeSelectUnit();	
 
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
@@ -78,11 +136,6 @@ protected:
 	// Begin PlayerController interface
 	virtual void PlayerTick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
-	// End PlayerController interface
-
-	/** Input handlers for SetDestination action. */
-	void OnSetDestinationPressed();
-	void OnSetDestinationReleased();
 
 private:
 	bool bInputPressed; // Input is bring pressed

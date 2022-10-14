@@ -10,7 +10,5 @@ class UGMHalfCoverComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	UGMHalfCoverComponent();
-
-	
+	UGMHalfCoverComponent();	
 };

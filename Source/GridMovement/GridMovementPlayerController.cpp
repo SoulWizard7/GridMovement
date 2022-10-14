@@ -1,102 +1,227 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "GridMovementPlayerController.h"
-
 #include "AIController.h"
 #include "GMCoverIconDisplay.h"
 #include "GMPathPointCheckComponent.h"
 #include "GMWalkableSurfaceComponent.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
-#include "GridMovementCharacter.h"
 #include "NavigationSystem.h"
-#include "ToolBuilderUtil.h"
+#include "Combat/GMCombatManager.h"
+#include "UnitComponents/GMUnitGroundMarkerComponent.h"
 
 AGridMovementPlayerController::AGridMovementPlayerController()
 {
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
+	UnitSelectorComponent = CreateDefaultSubobject<UGMUnitSelectorComponent>("UnitSelector");
+
 }
 
 void AGridMovementPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	bShowMouseCursor = true;
+
+	UnitSelectorComponent->GridMovementPlayerController = this;
+	
 	PathPointCheckComponent = FindComponentByClass<UGMPathPointCheckComponent>();
+	CoverIconDisplay = Cast<AGMCoverIconDisplay>(GetWorld()->SpawnActor(CoverIconDisplayBlueprint));
+}
+
+void AGridMovementPlayerController::TryMoveUnit()
+{
+	if(CombatIsOn && CurrentUnit->CurrentMovementUnits == 0) return;
+	
+	if(IsCurrentMouseGridPositionValidMovementPosition(CurrentMousePositionHitResult))
+	{
+		ACharacter* C = Cast<AGMUnit>(CurrentUnit);
+		PathToCurrentMouseGridPosition = PathPointCheckComponent->FindPathToLocation(CurrentMouseGridPosition, C);
+
+		if (PathToCurrentMouseGridPosition.Num() >= 1)
+		{
+			DisableInput(this);
+			CurrentUnit->UnitIsBusy(false);
+			CurrentUnit->CurrentCover = PathPointCheckComponent->CurrentMousePositionCover;
+			CurrentUnit->CurrentMovementUnits = 0;
+			CurrentUnit->MoveToLocation(CurrentMouseGridPosition);			
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CurrentMouseGridPosition, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
+		}
+	}
+}
+
+void AGridMovementPlayerController::StartCombat()
+{
+	if(!CombatManager)
+	{
+		CombatManager = Cast<AGMCombatManager>(GetWorld()->SpawnActor(CombatManagerBluePrint));
+		CombatManager->GridMovementPlayerController = this;
+		CombatIsOn = true;
+	}	
+}
+
+void AGridMovementPlayerController::EndCombat()
+{
+	CombatManager->DeSpawnButtons();
+	GetWorld()->DestroyActor(CombatManager);
+	CombatManager = nullptr;
+	CombatIsOn = false;
+}
+
+void AGridMovementPlayerController::CombatManagerEndPlayerTurn()
+{
+	if(CombatManager)
+	{
+		CombatManager->EndPlayerTurn();
+	}	
+}
+
+void AGridMovementPlayerController::TryAttackUnit()
+{
+	if(!CurrentUnit->hasAction) return;
+	
+	if(IsValid(CurrentHoveredUnit))
+	{
+		if(CurrentHoveredUnit->IsEnemy)
+		{
+			CurrentUnit->UnitIsBusy(true);
+			CurrentUnit->AttackUnit(CurrentHoveredUnit);
+		}
+	}
+}
+
+void AGridMovementPlayerController::MarkUnitsOnHover()
+{
+	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MarkUnitsOnHover", true, FVector2D(1.f));	
+
+	if (CurrentMousePositionHitResult.GetActor())
+	{
+		if(CurrentHoveredUnit == CurrentMousePositionHitResult.GetActor())
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MarkUnitsOnHover return", true, FVector2D(1.f));
+			return;
+		}
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Yellow, "Current Hovered Unit is: " + CurrentMousePositionHitResult.GetActor()->GetName(), true, FVector2D(1.f));
+		
+		if(CurrentMousePositionHitResult.GetActor()->IsA<AGMUnit>())
+		{
+			CurrentHoveredUnit = Cast<AGMUnit>(CurrentMousePositionHitResult.GetActor());
+			
+			if(CurrentHoveredUnit->IsEnemy)
+			{				
+				CurrentHoveredUnit->UnitGroundMarkerController->ActivateDecalHoverToAttack();
+			}
+			else
+			{
+				if(CurrentUnit != CurrentHoveredUnit)
+				{
+					CurrentHoveredUnit->UnitGroundMarkerController->ActivateDecalHoverToSelect();
+				}
+			}
+		}
+		else
+		{
+			CurrentHoveredUnit = nullptr;
+		}
+	}	
 }
 
 void AGridMovementPlayerController::DebugStuff()
 {
-	Char->DebugCover();	
+	if(IsValid(CurrentUnit))
+	{
+		CurrentUnit->DebugCover();
+	}
+}
+
+void AGridMovementPlayerController::EnablePlayerInput()
+{		
+	EnableInput(this);
 }
 
 void AGridMovementPlayerController::LeftMouseButton()
-{
+{	
+	SelectUnit();
 }
 
 void AGridMovementPlayerController::RightMouseButton()
 {
+	if(IsValid(CurrentHoveredUnit))
+	{
+		TryAttackUnit();
+	}
+	if(IsValid(CurrentUnit))
+	{
+		TryMoveUnit();
+	}	
 }
 
-void AGridMovementPlayerController::CheckCurrentMousePosition(bool MouseGridPositionIsValid)
+void AGridMovementPlayerController::SelectUnit()
 {
-	if(MouseGridPositionIsValid)
-	{
-		if(hasNewPosition)
-		{
-			hasNewPosition = false;			
-
-			ACharacter* C = Cast<AGridMovementCharacter>(Char);
-			PathToCurrentMouseGridPosition = PathPointCheckComponent->FindPathToLocation(CurrentMouseGridPosition, C);
-
-			if(PathToCurrentMouseGridPosition.Num() >= 1)
-			{
-				if(PathPointCheckComponent->CheckIfMouseGridPositionIsValid(CurrentMouseGridPosition))
-				{				
-					PathPointCheckComponent->CheckGridPositionForCover(CurrentMouseGridPosition);
-					Char->DisplayCoverIconsBlueprintEvent(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);
-					CanMoveToPosition = true;
-				}
-				else
-				{
-					GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.f, FColor::White, "Not valid mouse position2", true, FVector2D(1.f));
-					PathPointCheckComponent->DeactivateAllCoverBools();
-					Char->DisplayCoverIconsBlueprintEvent(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);
-					return;
-				}
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.f, FColor::White, "Not valid mouse position1", true, FVector2D(1.f));
-				PathPointCheckComponent->DeactivateAllCoverBools();
-				Char->DisplayCoverIconsBlueprintEvent(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);				
-				return;
-			}			
-		}			
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Blue, FString::Printf(TEXT("NorthHalfCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.NorthHalfCover ? ("true") : ("false")), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Blue, FString::Printf(TEXT("EastHalfCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.EastHalfCover ? "true" : "false"), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Blue, FString::Printf(TEXT("SouthHalfCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.SouthHalfCover ? "true" : "false"), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Blue, FString::Printf(TEXT("WestHalfCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.WestHalfCover ? "true" : "false"), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Orange, FString::Printf(TEXT("NorthFullCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.NorthFullCover ? ("true") : ("false")), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Orange, FString::Printf(TEXT("EastFullCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.EastFullCover ? "true" : "false"), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Orange, FString::Printf(TEXT("SouthFullCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.SouthFullCover ? "true" : "false"), false, FVector2D(1.f));
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Orange, FString::Printf(TEXT("WestFullCover: %hs"), PathPointCheckComponent->CurrentMousePositionCover.WestFullCover ? "true" : "false"), false, FVector2D(1.f));
-	}
-	else
-	{
-		CanMoveToPosition = false;
-	}
+	UnitSelectorComponent->TryGetUnit();
 }
 
-bool AGridMovementPlayerController::GetCurrentMouseGridPosition()
+void AGridMovementPlayerController::SelectUnit(AGMUnit* Unit)
 {
-	//I have stacked checks here, to be able to use GetHitResultUnderCursor helper function from Controller
-	
+	DeSelectUnit();
+	CurrentUnit = Unit;
+	CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.0f, FColor::Blue, FString::Printf(TEXT("Select Unit w overload")), false, FVector2D(1.f));
+}
+
+void AGridMovementPlayerController::DeSelectUnit()
+{
+	if(IsValid(CurrentUnit)) CurrentUnit->FindComponentByClass<UGMUnitGroundMarkerComponent>()->SetDecalDefault();
+	CurrentUnit = nullptr;
+}
+
+void AGridMovementPlayerController::SetCurrentMousePositionHitResult()
+{
 	FHitResult Hit;
 	GetHitResultUnderCursor(ECC_Visibility, true, Hit);
-	CurrentMouseGridPosition = Hit.Location;	
+	CurrentMousePositionHitResult = Hit;
+}
 
-	//Check if mousepos is Walkable
+void AGridMovementPlayerController::SetCurrentMouseGridPosition()
+{		
+	CurrentMouseGridPosition = CurrentMousePositionHitResult.Location;
+
+	//Round the mousepos to 1m
+
+	float x = CurrentMouseGridPosition.X / 100;
+	float y = CurrentMouseGridPosition.Y / 100;
+	x = round(x);
+	y = round(y);
+	CurrentMouseGridPosition.X = x * 100;
+	CurrentMouseGridPosition.Y = y * 100;
+	CurrentMouseGridPosition.Z = round(CurrentMouseGridPosition.Z);
+
+	FString msg1 = CurrentMouseGridPosition.ToString();
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, msg1, true, FVector2D(1.f));
+
+	//If possition is new, set cover icons display
 	
+	if (CurrentMouseGridPosition.Size2D() != LastMouseGridPosition.Size2D() || CurrentMouseGridPosition.Z != LastMouseGridPosition.Z)
+	{
+		LastMouseGridPosition = CurrentMouseGridPosition;
+		//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.f, FColor::White, "NewPosition", true, FVector2D(1.f));
+
+		PathPointCheckComponent->DeactivateAllCoverBools();
+		CoverIconDisplay->DisplayCoverIcons(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);
+
+		if(IsCurrentMouseGridPositionValidMovementPosition(CurrentMousePositionHitResult))
+		{			
+			PathPointCheckComponent->CheckGridPositionForCover(CurrentMouseGridPosition);
+			CoverIconDisplay->DisplayCoverIcons(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);			
+		}		
+	}
+}
+
+bool AGridMovementPlayerController::IsCurrentMouseGridPositionValidMovementPosition(FHitResult Hit)
+{
+	//Check if mousepos is Walkable	
 	if(Hit.GetActor())
 	{		
 		if(!Hit.GetActor()->FindComponentByClass<UGMWalkableSurfaceComponent>())
@@ -112,23 +237,13 @@ bool AGridMovementPlayerController::GetCurrentMouseGridPosition()
 	float normalZ = abs(Hit.Normal.Z);
 	if(normalZ < 0.9f) return false;
 
-	//Round the mousepos to 1m
+	//Check if GridPosition has actors on position (pawns mainly)
 
-	float x = CurrentMouseGridPosition.X / 100;
-	float y = CurrentMouseGridPosition.Y / 100;
-	x = round(x);
-	y = round(y);
-	CurrentMouseGridPosition.X = x * 100;
-	CurrentMouseGridPosition.Y = y * 100;	
-
-	FString msg1 = CurrentMouseGridPosition.ToString();
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, msg1, true, FVector2D(1.f));
-	
-	if (CurrentMouseGridPosition.Size2D() != LastMouseGridPosition.Size2D())
+	if (!PathPointCheckComponent->CheckIfMouseGridPositionHasActorsOnTop(CurrentMouseGridPosition))
 	{
-		LastMouseGridPosition = CurrentMouseGridPosition;
-		hasNewPosition = true;		
-	}	
+		return false;
+	}
+	
 	return true;
 }
 
@@ -136,53 +251,29 @@ void AGridMovementPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 
-	//MouseGridPositionIsValid = GetCurrentMouseGridPosition();
+	SetCurrentMousePositionHitResult();		
 
-	CheckCurrentMousePosition(GetCurrentMouseGridPosition());
+	SetCurrentMouseGridPosition();
 
-	if(bInputPressed)
-	{
-		FollowTime += DeltaTime;
+	MarkUnitsOnHover();
+	
+	if(IsValid(CurrentUnit))
+	{		
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Yellow, "CurrentUnit is: " + CurrentUnit->GetName(), true, FVector2D(1.f));
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Orange, FString::Printf(TEXT("CurrentUnit has action: %hs"), CurrentUnit->hasAction ? "true" : "false"), false, FVector2D(1.f));
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Orange, FString::Printf(TEXT("CurrentUnit current moveUnits: %f"), CurrentUnit->CurrentMovementUnits), false, FVector2D(1.f));
+	
 	}
-	else
-	{
-		FollowTime = 0.f;
-	}	
 }
 
 void AGridMovementPlayerController::SetupInputComponent()
 {
 	// set up gameplay key bindings
 	Super::SetupInputComponent();
-	InputComponent->BindAction("SetDestination", IE_Pressed, this, &AGridMovementPlayerController::OnSetDestinationPressed);
-	InputComponent->BindAction("SetDestination", IE_Released, this, &AGridMovementPlayerController::OnSetDestinationReleased);
 	InputComponent->BindAction("DebugCover", IE_Pressed, this, &AGridMovementPlayerController::DebugStuff);
+	InputComponent->BindAction("LeftMouseButton", IE_Released, this, &AGridMovementPlayerController::LeftMouseButton);
+	InputComponent->BindAction("RightMouseButton", IE_Released, this, &AGridMovementPlayerController::RightMouseButton);
+	InputComponent->BindAction("StartCombat", IE_Pressed, this, &AGridMovementPlayerController::StartCombat);
+	InputComponent->BindAction("EndPlayerTurn", IE_Pressed, this, &AGridMovementPlayerController::CombatManagerEndPlayerTurn);
 }
 
-void AGridMovementPlayerController::OnSetDestinationPressed()
-{
-	// We flag that the input is being pressed
-	bInputPressed = true;
-	// Just in case the character was moving because of a previous short press we stop it
-	StopMovement();
-}
-
-void AGridMovementPlayerController::OnSetDestinationReleased()
-{
-	// Player is no longer pressing the input
-	bInputPressed = false;
-
-	// If it was a short press
-	if(FollowTime <= ShortPressThreshold)
-	{		
-		if(PathPointCheckComponent)
-		{
-			if(CanMoveToPosition)
-			{
-				Char->CurrentCover = PathPointCheckComponent->CurrentMousePositionCover;
-				Char->MoveToLocation(CurrentMouseGridPosition);
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CurrentMouseGridPosition, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
-			}
-		}		
-	}
-}

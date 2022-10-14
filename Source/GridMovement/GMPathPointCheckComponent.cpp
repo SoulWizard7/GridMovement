@@ -4,15 +4,18 @@
 
 #include "GMHalfCoverComponent.h"
 #include "GMFullCoverComponent.h"
+#include "GMWalkableSurfaceComponent.h"
 #include "NavigationSystem.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UGMPathPointCheckComponent::UGMPathPointCheckComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;	
 	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
-	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Visibility));	
+	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Visibility));
+	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 	HalfCoverObject.Add(EObjectTypeQuery::ObjectTypeQuery7);
 	FullCoverObject.Add(EObjectTypeQuery::ObjectTypeQuery8);
 }
@@ -23,17 +26,20 @@ void UGMPathPointCheckComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-bool UGMPathPointCheckComponent::CheckIfMouseGridPositionIsValid(FVector MousePosition)
-{	
-	FVector CurPos = FVector(MousePosition.X, MousePosition.Y, MousePosition.Z + SphereHeight);	
-	//UClass* seekClass = nullptr;	
+bool UGMPathPointCheckComponent::CheckIfMouseGridPositionHasActorsOnTop(FVector MousePosition)
+{
+	// Finds if GridPosition has actors on position (pawns mainly)
+	
+	FVector CurPos = FVector(MousePosition.X, MousePosition.Y, MousePosition.Z + SphereHeight * 2);	
 	TArray<AActor*> outActors;
 	bool hit = UKismetSystemLibrary::SphereOverlapActors(GetWorld(), CurPos, SphereRadius, TraceObjectTypes, nullptr, ignoreActors, outActors);
 
+	
 	for (AActor* overlappedActor : outActors)
 	{
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 2.f, FColor::White, overlappedActor->GetName(), true, FVector2D(1.f));
-	}	
+	}
+	
 	//DrawDebugSphere(GetWorld(), CurPos, SphereRadius, 5, hit ? FColor::Red : FColor::Green, false, 3.f);
 
 	if (hit) return false;
@@ -55,6 +61,7 @@ void UGMPathPointCheckComponent::DeactivateAllCoverBools()
 	CurrentMousePositionCover.EastFullCover = false;
 	CurrentMousePositionCover.SouthFullCover = false;
 	CurrentMousePositionCover.WestFullCover = false;
+	CurrentMousePositionCover.CanMoveToPosition = false;
 }
 
 FCover UGMPathPointCheckComponent::CheckGridPositionForCover(FVector MousePosition)
@@ -190,6 +197,22 @@ FCover UGMPathPointCheckComponent::CheckGridPositionForCover(FVector MousePositi
 	{
 		if(Hit.GetActor()->FindComponentByClass<UGMFullCoverComponent>()) CurrentMousePositionCover.WestFullCover = true;		
 	}
+
+	UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(),
+		FVector(MousePosition.X, MousePosition.Y, MousePosition.Z + SphereHeight * 2),
+		FVector(MousePosition.X, MousePosition.Y, MousePosition.Z - SphereHeight * 2),
+		TraceObjectTypes,
+		true,
+		ignoreActors,
+		EDrawDebugTrace::None,
+		Hit,
+		true,
+		FLinearColor::Red,FLinearColor::Green,2);
+
+	if(Hit.bBlockingHit)
+	{		
+		if(Hit.GetActor()->FindComponentByClass<UGMWalkableSurfaceComponent>()) CurrentMousePositionCover.CanMoveToPosition = true;		
+	}	
 		
 	return CurrentMousePositionCover;	
 }
