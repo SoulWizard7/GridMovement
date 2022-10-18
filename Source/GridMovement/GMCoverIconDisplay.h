@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GMPathPointCheckComponent.h"
+#include "GMGridPositionCoverCheckComponent.h"
 #include "Components/DecalComponent.h"
 
 #include "GMCoverIconDisplay.generated.h"

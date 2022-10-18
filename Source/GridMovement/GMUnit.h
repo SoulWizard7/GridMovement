@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GMPathPointCheckComponent.h"
+#include "GMGridPositionCoverCheckComponent.h"
 #include "GameFramework/Character.h"
 #include "UnitComponents/GMUnitGroundMarkerComponent.h"
 #include "GMUnit.generated.h"

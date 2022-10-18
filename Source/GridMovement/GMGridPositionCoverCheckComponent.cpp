@@ -1,6 +1,6 @@
 
 
-#include "GMPathPointCheckComponent.h"
+#include "GMGridPositionCoverCheckComponent.h"
 
 #include "GMHalfCoverComponent.h"
 #include "GMFullCoverComponent.h"
@@ -10,7 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-UGMPathPointCheckComponent::UGMPathPointCheckComponent()
+UGMGridPositionCoverCheckComponent::UGMGridPositionCoverCheckComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;	
 	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
@@ -20,13 +20,13 @@ UGMPathPointCheckComponent::UGMPathPointCheckComponent()
 	FullCoverObject.Add(EObjectTypeQuery::ObjectTypeQuery8);
 }
 
-void UGMPathPointCheckComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+void UGMGridPositionCoverCheckComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-bool UGMPathPointCheckComponent::CheckIfMouseGridPositionHasActorsOnTop(FVector MousePosition)
+bool UGMGridPositionCoverCheckComponent::CheckIfMouseGridPositionHasActorsOnTop(FVector MousePosition)
 {
 	// Finds if GridPosition has actors on position (pawns mainly)
 	
@@ -51,7 +51,7 @@ bool UGMPathPointCheckComponent::CheckIfMouseGridPositionHasActorsOnTop(FVector 
 	return true;
 }
 
-void UGMPathPointCheckComponent::DeactivateAllCoverBools()
+void UGMGridPositionCoverCheckComponent::DeactivateAllCoverBools()
 {
 	CurrentMousePositionCover.NorthHalfCover = false;
 	CurrentMousePositionCover.EastHalfCover = false;
@@ -64,7 +64,7 @@ void UGMPathPointCheckComponent::DeactivateAllCoverBools()
 	CurrentMousePositionCover.CanMoveToPosition = false;
 }
 
-FCover UGMPathPointCheckComponent::CheckGridPositionForCover(FVector MousePosition)
+FCover UGMGridPositionCoverCheckComponent::CheckGridPositionForCover(FVector MousePosition)
 {
 	DeactivateAllCoverBools();
 	FHitResult Hit;
@@ -217,7 +217,7 @@ FCover UGMPathPointCheckComponent::CheckGridPositionForCover(FVector MousePositi
 	return CurrentMousePositionCover;	
 }
 
-TArray<FVector> UGMPathPointCheckComponent::FindPathToLocation(FVector Location, ACharacter* Character)
+TArray<FVector> UGMGridPositionCoverCheckComponent::FindPathToLocation(FVector Location, ACharacter* Character)
 {
 	TArray<FVector> Result;
 	FNavPathSharedPtr Path;

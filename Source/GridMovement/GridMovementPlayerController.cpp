@@ -3,7 +3,7 @@
 #include "GridMovementPlayerController.h"
 #include "AIController.h"
 #include "GMCoverIconDisplay.h"
-#include "GMPathPointCheckComponent.h"
+#include "GMGridPositionCoverCheckComponent.h"
 #include "GMWalkableSurfaceComponent.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
@@ -16,19 +16,23 @@ AGridMovementPlayerController::AGridMovementPlayerController()
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
 	UnitSelectorComponent = CreateDefaultSubobject<UGMUnitSelectorComponent>("UnitSelector");
-
 }
 
 void AGridMovementPlayerController::BeginPlay()
 {
-	Super::BeginPlay();
+	//Super::BeginPlay();
 
 	bShowMouseCursor = true;
 
 	UnitSelectorComponent->GridMovementPlayerController = this;
 	
-	PathPointCheckComponent = FindComponentByClass<UGMPathPointCheckComponent>();
+	GridPositionCoverCheckComponent = FindComponentByClass<UGMGridPositionCoverCheckComponent>();
 	CoverIconDisplay = Cast<AGMCoverIconDisplay>(GetWorld()->SpawnActor(CoverIconDisplayBlueprint));
+	CameraController = Cast<AGMCameraContoller>(GetWorld()-> SpawnActor(CameraControllerBlueprint));
+	CameraController->SetCameraPositionAtStart();
+
+	
+	//CameraController->CenterOnUnit()
 }
 
 void AGridMovementPlayerController::TryMoveUnit()
@@ -38,13 +42,13 @@ void AGridMovementPlayerController::TryMoveUnit()
 	if(IsCurrentMouseGridPositionValidMovementPosition(CurrentMousePositionHitResult))
 	{
 		ACharacter* C = Cast<AGMUnit>(CurrentUnit);
-		PathToCurrentMouseGridPosition = PathPointCheckComponent->FindPathToLocation(CurrentMouseGridPosition, C);
+		PathToCurrentMouseGridPosition = GridPositionCoverCheckComponent->FindPathToLocation(CurrentMouseGridPosition, C);
 
 		if (PathToCurrentMouseGridPosition.Num() >= 1)
 		{
 			DisableInput(this);
 			CurrentUnit->UnitIsBusy(false);
-			CurrentUnit->CurrentCover = PathPointCheckComponent->CurrentMousePositionCover;
+			CurrentUnit->CurrentCover = GridPositionCoverCheckComponent->CurrentMousePositionCover;
 			CurrentUnit->CurrentMovementUnits = 0;
 			CurrentUnit->MoveToLocation(CurrentMouseGridPosition);			
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CurrentMouseGridPosition, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
@@ -142,7 +146,7 @@ void AGridMovementPlayerController::EnablePlayerInput()
 }
 
 void AGridMovementPlayerController::LeftMouseButton()
-{	
+{
 	SelectUnit();
 }
 
@@ -160,7 +164,14 @@ void AGridMovementPlayerController::RightMouseButton()
 
 void AGridMovementPlayerController::SelectUnit()
 {
-	UnitSelectorComponent->TryGetUnit();
+	if(CombatIsOn)
+	{
+		UnitSelectorComponent->TryGetUnitCombat();
+	}
+	else
+	{
+		UnitSelectorComponent->TryGetUnit();		
+	}	
 }
 
 void AGridMovementPlayerController::SelectUnit(AGMUnit* Unit)
@@ -208,13 +219,13 @@ void AGridMovementPlayerController::SetCurrentMouseGridPosition()
 		LastMouseGridPosition = CurrentMouseGridPosition;
 		//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.f, FColor::White, "NewPosition", true, FVector2D(1.f));
 
-		PathPointCheckComponent->DeactivateAllCoverBools();
-		CoverIconDisplay->DisplayCoverIcons(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);
+		GridPositionCoverCheckComponent->DeactivateAllCoverBools();
+		CoverIconDisplay->DisplayCoverIcons(GridPositionCoverCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);
 
 		if(IsCurrentMouseGridPositionValidMovementPosition(CurrentMousePositionHitResult))
 		{			
-			PathPointCheckComponent->CheckGridPositionForCover(CurrentMouseGridPosition);
-			CoverIconDisplay->DisplayCoverIcons(PathPointCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);			
+			GridPositionCoverCheckComponent->CheckGridPositionForCover(CurrentMouseGridPosition);
+			CoverIconDisplay->DisplayCoverIcons(GridPositionCoverCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);			
 		}		
 	}
 }
@@ -239,7 +250,7 @@ bool AGridMovementPlayerController::IsCurrentMouseGridPositionValidMovementPosit
 
 	//Check if GridPosition has actors on position (pawns mainly)
 
-	if (!PathPointCheckComponent->CheckIfMouseGridPositionHasActorsOnTop(CurrentMouseGridPosition))
+	if (!GridPositionCoverCheckComponent->CheckIfMouseGridPositionHasActorsOnTop(CurrentMouseGridPosition))
 	{
 		return false;
 	}

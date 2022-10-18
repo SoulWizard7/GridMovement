@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "GMPathPointCheckComponent.generated.h"
+#include "GMGridPositionCoverCheckComponent.generated.h"
 
 USTRUCT(BlueprintType)
 struct FCover
@@ -31,12 +31,12 @@ public:
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 
-class UGMPathPointCheckComponent : public UActorComponent
+class UGMGridPositionCoverCheckComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	UGMPathPointCheckComponent();
+	UGMGridPositionCoverCheckComponent();
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

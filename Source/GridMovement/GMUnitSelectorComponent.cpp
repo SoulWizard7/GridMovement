@@ -15,24 +15,21 @@ void UGMUnitSelectorComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UGMUnitSelectorComponent::TryGetUnit()
 {
-	FHitResult Hit;
-	GridMovementPlayerController->GetHitResultUnderCursor(ECC_Pawn, true, Hit);
-
-	if (Hit.GetActor())
+	if (GridMovementPlayerController->CurrentMousePositionHitResult.GetActor())
 	{
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.f, FColor::White, Hit.GetActor()->GetName(), true, FVector2D(1.f));	
-		
-		if(Hit.GetActor()->IsA<AGMUnit>())
+		if(GridMovementPlayerController->CurrentMousePositionHitResult.GetActor()->IsA<AGMUnit>())
 		{
-			AGMUnit* Unit = Cast<AGMUnit>(Hit.GetActor());
+			AGMUnit* Unit = Cast<AGMUnit>(GridMovementPlayerController->CurrentMousePositionHitResult.GetActor());
 			if(!Unit->IsEnemy)
 			{				
 				if(IsValid(GridMovementPlayerController->CurrentUnit))
 				{
 					GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalDefault();
 				}
+
+				GridMovementPlayerController->CameraController->CenterOnUnit(Unit);
 				
-				GridMovementPlayerController->CurrentUnit = Cast<AGMUnit>(Hit.GetActor());
+				GridMovementPlayerController->CurrentUnit = Unit;
 				GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
 			}
 			else
@@ -44,6 +41,30 @@ void UGMUnitSelectorComponent::TryGetUnit()
 		{
 			GridMovementPlayerController->DeSelectUnit();
 		}
+	}
+}
+
+void UGMUnitSelectorComponent::TryGetUnitCombat()
+{	
+	if (GridMovementPlayerController->CurrentMousePositionHitResult.GetActor())
+	{
+		if(GridMovementPlayerController->CurrentMousePositionHitResult.GetActor()->IsA<AGMUnit>())
+		{
+			AGMUnit* Unit = Cast<AGMUnit>(GridMovementPlayerController->CurrentMousePositionHitResult.GetActor());
+			
+			if(!Unit->IsEnemy && Unit->hasAction || Unit->CurrentMovementUnits <= 0)
+			{				
+				if(IsValid(GridMovementPlayerController->CurrentUnit))
+				{
+					GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalDefault();
+				}
+				
+				GridMovementPlayerController->CameraController->CenterOnUnit(Unit);
+				
+				GridMovementPlayerController->CurrentUnit = Unit;
+				GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
+			}
+		}		
 	}
 }
 

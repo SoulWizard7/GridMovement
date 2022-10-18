@@ -23,7 +23,10 @@ void UGMCombatPlayerTurn::CombatPlayerTurn()
 }
 
 void UGMCombatPlayerTurn::EndTurn()
-{	
+{
+
+	//TODO wait until input is enabled
+	
 	CombatManager->SetState(States::EnemyTurn);
 }
 

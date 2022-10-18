@@ -3,9 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GMPathPointCheckComponent.h"
+#include "GMGridPositionCoverCheckComponent.h"
 #include "GMUnitSelectorComponent.h"
 #include "GridMovementCharacter.h"
+#include "Camera/GMCameraController.h"
 #include "GridMovementPlayerController.generated.h"
 
 class AGMUnit;
@@ -21,6 +22,12 @@ class AGridMovementPlayerController : public APlayerController
 public:
 	AGridMovementPlayerController();
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AGMCameraContoller> CameraControllerBlueprint;
+
+	UPROPERTY()
+	AGMCameraContoller* CameraController;
 
 	/** Time Threshold to know if it was a short press */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -64,7 +71,7 @@ public:
 	AGMUnit* CurrentUnit;
 
 	UPROPERTY(BlueprintReadOnly)
-	UGMPathPointCheckComponent* PathPointCheckComponent;
+	UGMGridPositionCoverCheckComponent* GridPositionCoverCheckComponent;
 
 	UPROPERTY(BlueprintReadOnly)
 	UGMUnitSelectorComponent* UnitSelectorComponent;

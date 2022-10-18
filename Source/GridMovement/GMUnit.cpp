@@ -54,12 +54,13 @@ void AGMUnit::Tick(float DeltaSeconds)
 			return;
 		}
 
+		GridMovementPlayerController->EnablePlayerInput();
+		
 		if(IsValid(CombatManager))
 		{
 			CombatManager->CombatPlayerTurn->PlayerDidAction();
 		}
 			
-		GridMovementPlayerController->EnablePlayerInput();
 		WaitForUnit = false;
 	}
 }
@@ -106,13 +107,14 @@ void AGMUnit::RegainActions()
 
 	CurrentMovementUnits = MaxMovementUnits;
 	hasAction = true;
+	
 }
 
 void AGMUnit::AttackUnit(AGMUnit* UnitToAttack)
 {
 	hasAction = false;
-
-	
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.f, FColor::Yellow, "Current Hovered Unit is: " + UnitToAttack->GetName(), true, FVector2D(1.f));
+		
 	UnitIsBusyWithAction = false;	
 }
 

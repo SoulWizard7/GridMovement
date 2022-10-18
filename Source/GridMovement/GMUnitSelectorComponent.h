@@ -22,6 +22,8 @@ public:
 
 	UFUNCTION()
 	void TryGetUnit();
+	UFUNCTION()
+	void TryGetUnitCombat();
 
 	UPROPERTY()
 	AGridMovementPlayerController* GridMovementPlayerController;
