@@ -9,6 +9,7 @@
 #include "Camera/GMCameraController.h"
 #include "GridMovementPlayerController.generated.h"
 
+class UGMAttackCalculatorComponent;
 class AGMUnit;
 class UNiagaraSystem;
 class AGMCoverIconDisplay;
@@ -23,6 +24,12 @@ public:
 	AGridMovementPlayerController();
 	virtual void BeginPlay() override;
 
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UGMUnitSelectorComponent* UnitSelectorComponent;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UGMAttackCalculatorComponent* AttackCalculatorComponent;
+	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGMCameraContoller> CameraControllerBlueprint;
 
@@ -72,9 +79,6 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	UGMGridPositionCoverCheckComponent* GridPositionCoverCheckComponent;
-
-	UPROPERTY(BlueprintReadOnly)
-	UGMUnitSelectorComponent* UnitSelectorComponent;
 
 	UFUNCTION()
 	void TryAttackUnit();

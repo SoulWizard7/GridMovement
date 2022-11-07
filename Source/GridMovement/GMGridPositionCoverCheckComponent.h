@@ -2,8 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Combat/GMCombatUtils.h"
 #include "GMGridPositionCoverCheckComponent.generated.h"
 
+/*
 USTRUCT(BlueprintType)
 struct FCover
 {
@@ -27,7 +29,7 @@ public:
 	bool WestFullCover;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Cover Struct")
 	bool CanMoveToPosition;
-};
+};*/
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 
@@ -69,6 +71,9 @@ public:
 
 	UFUNCTION()
 	FCover CheckGridPositionForCover(FVector MousePosition);
+
+	UFUNCTION()
+	bool CheckPosAndDirForFullCover(FVector Position, FVector Direction);
 
 	UFUNCTION(BlueprintCallable)
 	TArray<FVector> FindPathToLocation(FVector Location, ACharacter* Character);

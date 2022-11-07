@@ -2,6 +2,7 @@
 
 #include "GridMovementPlayerController.h"
 #include "AIController.h"
+#include "GMAttackCalculatorComponent.h"
 #include "GMCoverIconDisplay.h"
 #include "GMGridPositionCoverCheckComponent.h"
 #include "GMWalkableSurfaceComponent.h"
@@ -16,6 +17,9 @@ AGridMovementPlayerController::AGridMovementPlayerController()
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
 	UnitSelectorComponent = CreateDefaultSubobject<UGMUnitSelectorComponent>("UnitSelector");
+	
+	AttackCalculatorComponent = CreateDefaultSubobject<UGMAttackCalculatorComponent>("AttackCalculator");
+	
 }
 
 void AGridMovementPlayerController::BeginPlay()
@@ -27,6 +31,8 @@ void AGridMovementPlayerController::BeginPlay()
 	UnitSelectorComponent->GridMovementPlayerController = this;
 	
 	GridPositionCoverCheckComponent = FindComponentByClass<UGMGridPositionCoverCheckComponent>();
+	AttackCalculatorComponent->GridPositionCoverCheckComponent = GridPositionCoverCheckComponent;
+	
 	CoverIconDisplay = Cast<AGMCoverIconDisplay>(GetWorld()->SpawnActor(CoverIconDisplayBlueprint));
 	CameraController = Cast<AGMCameraContoller>(GetWorld()-> SpawnActor(CameraControllerBlueprint));
 	CameraController->SetCameraPositionAtStart();
@@ -98,7 +104,13 @@ void AGridMovementPlayerController::TryAttackUnit()
 
 void AGridMovementPlayerController::MarkUnitsOnHover()
 {
-	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MarkUnitsOnHover", true, FVector2D(1.f));	
+	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MarkUnitsOnHover", true, FVector2D(1.f));
+
+	if(CurrentHoveredUnit != nullptr)
+	{		
+		if(CurrentUnit != nullptr)	AttackCalculatorComponent->CalculatePercentage(CurrentUnit, CurrentHoveredUnit);
+	}
+	
 
 	if (CurrentMousePositionHitResult.GetActor())
 	{
@@ -115,7 +127,7 @@ void AGridMovementPlayerController::MarkUnitsOnHover()
 			
 			if(CurrentHoveredUnit->IsEnemy)
 			{				
-				CurrentHoveredUnit->UnitGroundMarkerController->ActivateDecalHoverToAttack();
+				CurrentHoveredUnit->UnitGroundMarkerController->ActivateDecalHoverToAttack();				
 			}
 			else
 			{
@@ -201,12 +213,17 @@ void AGridMovementPlayerController::SetCurrentMouseGridPosition()
 
 	//Round the mousepos to 1m
 
+	CurrentMouseGridPosition = RoundVectorXY(CurrentMouseGridPosition);
+
+	/*
 	float x = CurrentMouseGridPosition.X / 100;
 	float y = CurrentMouseGridPosition.Y / 100;
 	x = round(x);
 	y = round(y);
 	CurrentMouseGridPosition.X = x * 100;
 	CurrentMouseGridPosition.Y = y * 100;
+	*/
+	
 	CurrentMouseGridPosition.Z = round(CurrentMouseGridPosition.Z);
 
 	FString msg1 = CurrentMouseGridPosition.ToString();

@@ -77,10 +77,16 @@ public:
 	bool hasAction = false;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float MaxMovementUnits = 10;
+	float MaxMovementUnits = 10.f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float CurrentMovementUnits = 0;
+	float CurrentMovementUnits = 0.f;
+	
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float AimBonus = 10.f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float attackDistanceInMeter = 25.f;
 
 };

@@ -217,6 +217,31 @@ FCover UGMGridPositionCoverCheckComponent::CheckGridPositionForCover(FVector Mou
 	return CurrentMousePositionCover;	
 }
 
+bool UGMGridPositionCoverCheckComponent::CheckPosAndDirForFullCover(FVector Position, FVector Direction)
+{
+	FHitResult Hit;
+	
+	UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(),
+		FVector(Position.X, Position.Y, Position.Z + SphereHeight),
+		FVector(Position.X, Position.Y, Position.Z + SphereHeight) + Direction * 100.f,
+		TraceObjectTypes,
+		false,
+		ignoreActors,
+		EDrawDebugTrace::None,
+		Hit,
+		true,
+		FLinearColor::Red,FLinearColor::Green,2);
+
+	if(Hit.bBlockingHit)
+	{
+		if(Hit.GetActor()->FindComponentByClass<UGMFullCoverComponent>())
+		{
+			return false;
+		}		
+	}
+	return true;
+}
+
 TArray<FVector> UGMGridPositionCoverCheckComponent::FindPathToLocation(FVector Location, ACharacter* Character)
 {
 	TArray<FVector> Result;
