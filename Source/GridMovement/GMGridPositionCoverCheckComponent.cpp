@@ -32,7 +32,7 @@ bool UGMGridPositionCoverCheckComponent::CheckIfMouseGridPositionHasActorsOnTop(
 	
 	FVector CurPos = FVector(MousePosition.X, MousePosition.Y, MousePosition.Z + SphereHeight * 2);	
 	TArray<AActor*> outActors;
-	bool hit = UKismetSystemLibrary::SphereOverlapActors(GetWorld(), CurPos, SphereRadius, TraceObjectTypes, nullptr, ignoreActors, outActors);
+	bool hit = UKismetSystemLibrary::SphereOverlapActors(GetWorld(), CurPos, SphereRadius, TraceObjectTypes, nullptr, ComponentSetIgnoreActors, outActors);
 
 	
 	for (AActor* overlappedActor : outActors)
@@ -64,7 +64,7 @@ void UGMGridPositionCoverCheckComponent::DeactivateAllCoverBools()
 	CurrentMousePositionCover.CanMoveToPosition = false;
 }
 
-FCover UGMGridPositionCoverCheckComponent::CheckGridPositionForCover(FVector MousePosition)
+FCover UGMGridPositionCoverCheckComponent::CheckGridPositionForCover(FVector MousePosition, TArray<AActor*> ignoreActors)
 {
 	DeactivateAllCoverBools();
 	FHitResult Hit;
@@ -226,7 +226,7 @@ bool UGMGridPositionCoverCheckComponent::CheckPosAndDirForFullCover(FVector Posi
 		FVector(Position.X, Position.Y, Position.Z + SphereHeight) + Direction * 100.f,
 		TraceObjectTypes,
 		false,
-		ignoreActors,
+		ComponentSetIgnoreActors,
 		EDrawDebugTrace::None,
 		Hit,
 		true,
@@ -238,6 +238,61 @@ bool UGMGridPositionCoverCheckComponent::CheckPosAndDirForFullCover(FVector Posi
 		{
 			return false;
 		}		
+	}
+	return true;
+}
+
+bool UGMGridPositionCoverCheckComponent::CheckPosAndDirForHalfCover(FVector Position, FVector Direction)
+{
+	FHitResult Hit;
+	
+	UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(),
+		FVector(Position.X, Position.Y, Position.Z + SphereHeight),
+		FVector(Position.X, Position.Y, Position.Z + SphereHeight) + Direction * 100.f,
+		TraceObjectTypes,
+		false,
+		ComponentSetIgnoreActors,
+		EDrawDebugTrace::None,
+		Hit,
+		true,
+		FLinearColor::Red,FLinearColor::Green,2);
+
+	if(Hit.bBlockingHit)
+	{
+		if(Hit.GetActor()->FindComponentByClass<UGMHalfCoverComponent>())
+		{
+			return false;
+		}		
+	}
+	return true;
+}
+
+bool UGMGridPositionCoverCheckComponent::CheckPosAndDirForCover(FVector Position, FVector Direction)
+{
+	FHitResult Hit;
+	
+	UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(),
+		FVector(Position.X, Position.Y, Position.Z + SphereHeight),
+		FVector(Position.X, Position.Y, Position.Z + SphereHeight) + Direction * 100.f,
+		TraceObjectTypes,
+		false,
+		ComponentSetIgnoreActors,
+		EDrawDebugTrace::None,
+		Hit,
+		true,
+		FLinearColor::Red,FLinearColor::Green,2);
+
+	if(Hit.bBlockingHit)
+	{
+		if(Hit.GetActor()->FindComponentByClass<UGMHalfCoverComponent>())
+		{
+			return false;
+		}
+		
+		if(Hit.GetActor()->FindComponentByClass<UGMFullCoverComponent>())
+		{
+			return false;
+		}	
 	}
 	return true;
 }

@@ -2,49 +2,46 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "Templates/SubclassOf.h"
-#include "GameFramework/PlayerController.h"
 #include "GMAIController.generated.h"
 
-/** Forward declaration to improve compiling times */
-class UNiagaraSystem;
-class AAIController;
+UENUM(BlueprintType)
+enum class ECombatMorale : uint8
+{
+	Aggressive,
+	Normal,
+	Defensive
+};
 
-UCLASS()
+UENUM(BlueprintType)
+enum class EEnemyState : uint8
+{
+	Idle,
+	CombatIdle,
+	CombatAction
+};
+
+
+UCLASS(Meta = (BlueprintSpawnableComponent))
 class AGMAIController : public AAIController
 {
 	GENERATED_BODY()
+	AGMAIController();
+	virtual void BeginPlay() override;
 
 public:
-	AGMAIController();
 
-	/** Time Threshold to know if it was a short press */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	float ShortPressThreshold;
+	UPROPERTY(BlueprintReadOnly)
+	UBlackboardComponent* BlackboardComponent;
 
-	/** FX Class that we will spawn when clicking */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UNiagaraSystem* FXCursor;
+	UFUNCTION(BlueprintCallable)
+	void SetEnemyState(EEnemyState EnemyState);
 
-protected:
-	/** True if the controlled character should navigate to the mouse cursor. */
-	uint32 bMoveToMouseCursor : 1;
+	UFUNCTION(BlueprintCallable)
+	void SetMoraleState(ECombatMorale MoraleState);
 
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
-	//virtual void SetupInputComponent() override;
 
-	/** Input handlers for SetDestination action. */
-	void OnSetDestinationPressed();
-	void OnSetDestinationReleased();
-	/*
-	bool AGMAIController::GetHitResultUnderCursor(ECollisionChannel TraceChannel, bool bTraceComplex, FHitResult& HitResult) const;
-	bool AGMAIController::GetHitResultAtScreenPosition(const FVector2D ScreenPosition, const ECollisionChannel TraceChannel, bool bTraceComplex, FHitResult& HitResult) const;
-*/
-private:
-	bool bInputPressed; // Input is bring pressed
-	bool bIsTouch; // Is it a touch device
-	float FollowTime; // For how long it has been pressed
+	UPROPERTY(EditDefaultsOnly)
+	UBehaviorTree* BehaviourTreeBlueprint;
 };
 
 

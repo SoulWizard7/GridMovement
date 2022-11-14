@@ -16,6 +16,9 @@ public:
 	UFUNCTION()
 	void GetAllUnits();
 
+	UFUNCTION()
+	void InitAllUnitCombatStartFunctions();
+
 	UPROPERTY(VisibleAnywhere)
 	AGMCombatManager* CombatManager;
 	

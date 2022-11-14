@@ -1,16 +1,18 @@
 
 #include "GMAttackCalculatorComponent.h"
 
+#include "Combat/GMCombatUtils.h"
+
 UGMAttackCalculatorComponent::UGMAttackCalculatorComponent()
 {
 }
 
-bool UGMAttackCalculatorComponent::CanAttackUnit(AGMUnit* attacker, AGMUnit* toAttack)
+bool UGMAttackCalculatorComponent::CanAttackUnitOld(AGMUnit* attacker, AGMUnit* toAttack)
 {
 	FVector selfPosition = RoundVectorXY(attacker->GetActorLocation());
 	FVector toAttackPosition = RoundVectorXY(toAttack->GetActorLocation());
 
-	if(selfPosition.X == toAttackPosition.X || selfPosition.Y == toAttackPosition.Y) return false;
+	//if(selfPosition.X == toAttackPosition.X || selfPosition.Y == toAttackPosition.Y) return false; //Should player be able to shoot from direct line with fullcover?
 	
 	if(selfPosition.X - 10 > toAttackPosition.X)
 	{
@@ -73,14 +75,14 @@ bool UGMAttackCalculatorComponent::CanAttackUnit(AGMUnit* attacker, AGMUnit* toA
 	return true;
 }
 
-float UGMAttackCalculatorComponent::CalculatePercentage(AGMUnit* attacker, AGMUnit* toAttack)
+float UGMAttackCalculatorComponent::CalculatePercentageOld(AGMUnit* attacker, AGMUnit* toAttack)
 {
-	//bool canAttack = CanAttackUnit(attacker, toAttack;
-	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("CanAttack: %hhd"), canAttack) , true, FVector2D(1.f));
+	bool canAttack = CanAttackUnitOld(attacker, toAttack);
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("CanAttack: %hhd"), canAttack) , true, FVector2D(1.f));
 	
 	float precentage = StartPercentage;
 
-	if(!CanAttackUnit(attacker, toAttack))
+	if(!CanAttackUnitOld(attacker, toAttack))
 	{
 		return 0.f;		
 	}
@@ -130,7 +132,10 @@ float UGMAttackCalculatorComponent::CalculatePercentage(AGMUnit* attacker, AGMUn
 	}
 
 	// Calculate unit bonuses
-	precentage += attacker->AimBonus;	
+	precentage += attacker->AimBonus;
+
+	// Calculate toAttack unit bonuses
+	precentage -= toAttack->DodgeBonus;
 
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("dist penalty: %f"), HitChanceCurve->GetFloatValue(distance/attacker->attackDistanceInMeter)) , true, FVector2D(1.f));
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("HitChance: %f"), precentage) , true, FVector2D(1.f));
@@ -138,3 +143,17 @@ float UGMAttackCalculatorComponent::CalculatePercentage(AGMUnit* attacker, AGMUn
 	return precentage;
 }
 
+bool UGMAttackCalculatorComponent::RollToHitOld(float HitChance)
+{
+	float roll = FMath::RandRange(0, 100);
+	if(roll < HitChance)
+	{
+		return true;
+	}
+	return false;
+}
+
+float UGMAttackCalculatorComponent::RTCalculatePercentageOld(AGMUnit* attacker, AGMUnit* toAttack)
+{
+	return CalculatePercentageOld(attacker,toAttack);
+}

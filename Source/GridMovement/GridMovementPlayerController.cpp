@@ -10,6 +10,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NavigationSystem.h"
 #include "Combat/GMCombatManager.h"
+#include "Combat/GMCombatUtils.h"
 #include "UnitComponents/GMUnitGroundMarkerComponent.h"
 
 AGridMovementPlayerController::AGridMovementPlayerController()
@@ -19,6 +20,7 @@ AGridMovementPlayerController::AGridMovementPlayerController()
 	UnitSelectorComponent = CreateDefaultSubobject<UGMUnitSelectorComponent>("UnitSelector");
 	
 	AttackCalculatorComponent = CreateDefaultSubobject<UGMAttackCalculatorComponent>("AttackCalculator");
+	//GridPositionCoverCheckComponent = CreateDefaultSubobject<UGMGridPositionCoverCheckComponent>("GridPositionCoverCheck") //Fix later?
 	
 }
 
@@ -62,6 +64,14 @@ void AGridMovementPlayerController::TryMoveUnit()
 	}
 }
 
+void AGridMovementPlayerController::MoveEnemyUnit(AGMUnit* Unit, FVector Position)
+{	
+	Unit->UnitIsBusy(false);
+	Unit->CurrentCover = GridPositionCoverCheckComponent->CheckGridPositionForCover(Position, GridPositionCoverCheckComponent->ComponentSetIgnoreActors);
+	Unit->CurrentMovementUnits = 0;
+	Unit->MoveToLocation(Position);
+}
+
 void AGridMovementPlayerController::StartCombat()
 {
 	if(!CombatManager)
@@ -90,6 +100,7 @@ void AGridMovementPlayerController::CombatManagerEndPlayerTurn()
 
 void AGridMovementPlayerController::TryAttackUnit()
 {
+	if(CurrentUnit == nullptr) return;
 	if(!CurrentUnit->hasAction) return;
 	
 	if(IsValid(CurrentHoveredUnit))
@@ -108,7 +119,9 @@ void AGridMovementPlayerController::MarkUnitsOnHover()
 
 	if(CurrentHoveredUnit != nullptr)
 	{		
-		if(CurrentUnit != nullptr)	AttackCalculatorComponent->CalculatePercentage(CurrentUnit, CurrentHoveredUnit);
+		if(CurrentUnit != nullptr)	AttackCalculatorComponent->CalculatePercentageOld(CurrentUnit, CurrentHoveredUnit);
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Yellow, "Current Hovered Unit is: " + CurrentHoveredUnit->GetName(), true, FVector2D(1.f));
+		
 	}
 	
 
@@ -116,10 +129,8 @@ void AGridMovementPlayerController::MarkUnitsOnHover()
 	{
 		if(CurrentHoveredUnit == CurrentMousePositionHitResult.GetActor())
 		{
-			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::White, "MarkUnitsOnHover return", true, FVector2D(1.f));
 			return;
 		}
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Yellow, "Current Hovered Unit is: " + CurrentMousePositionHitResult.GetActor()->GetName(), true, FVector2D(1.f));
 		
 		if(CurrentMousePositionHitResult.GetActor()->IsA<AGMUnit>())
 		{
@@ -214,15 +225,6 @@ void AGridMovementPlayerController::SetCurrentMouseGridPosition()
 	//Round the mousepos to 1m
 
 	CurrentMouseGridPosition = RoundVectorXY(CurrentMouseGridPosition);
-
-	/*
-	float x = CurrentMouseGridPosition.X / 100;
-	float y = CurrentMouseGridPosition.Y / 100;
-	x = round(x);
-	y = round(y);
-	CurrentMouseGridPosition.X = x * 100;
-	CurrentMouseGridPosition.Y = y * 100;
-	*/
 	
 	CurrentMouseGridPosition.Z = round(CurrentMouseGridPosition.Z);
 
@@ -241,7 +243,7 @@ void AGridMovementPlayerController::SetCurrentMouseGridPosition()
 
 		if(IsCurrentMouseGridPositionValidMovementPosition(CurrentMousePositionHitResult))
 		{			
-			GridPositionCoverCheckComponent->CheckGridPositionForCover(CurrentMouseGridPosition);
+			GridPositionCoverCheckComponent->CheckGridPositionForCover(CurrentMouseGridPosition, GridPositionCoverCheckComponent->ComponentSetIgnoreActors);
 			CoverIconDisplay->DisplayCoverIcons(GridPositionCoverCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);			
 		}		
 	}

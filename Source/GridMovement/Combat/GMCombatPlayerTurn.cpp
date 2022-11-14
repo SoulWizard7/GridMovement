@@ -27,11 +27,16 @@ void UGMCombatPlayerTurn::EndTurn()
 
 	//TODO wait until input is enabled
 	
-	CombatManager->SetState(States::EnemyTurn);
+	CombatManager->SetState(States::EnemyTurnStart);
 }
 
 void UGMCombatPlayerTurn::PlayerDidAction()
 {
+	for (AGMUnit* Unit : CombatManager->EnemyUnits)
+	{
+		Unit->RTFindCurrentTarget();
+	}
+	
 	if(!CombatManager->GridMovementPlayerController->CurrentUnit->hasAction && CombatManager->GridMovementPlayerController->CurrentUnit->CurrentMovementUnits <= 0)
 	{
 		CombatManager->GridMovementPlayerController->DeSelectUnit();

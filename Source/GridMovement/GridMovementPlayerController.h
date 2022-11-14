@@ -24,11 +24,17 @@ public:
 	AGridMovementPlayerController();
 	virtual void BeginPlay() override;
 
+	///////////////////////////////////////////
+	//////Components///////////////////////////
+
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	UGMUnitSelectorComponent* UnitSelectorComponent;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	UGMAttackCalculatorComponent* AttackCalculatorComponent;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UGMGridPositionCoverCheckComponent* GridPositionCoverCheckComponent;
 	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGMCameraContoller> CameraControllerBlueprint;
@@ -44,15 +50,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UNiagaraSystem* FXCursor;
 
-
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGMCoverIconDisplay> CoverIconDisplayBlueprint;
 
 	UPROPERTY()
 	AGMCoverIconDisplay* CoverIconDisplay;
-
-	UFUNCTION()
-	void TryMoveUnit();	
 
 	///////////////////////////////////////////
 	//Combat Manager and Combat Functions////
@@ -76,10 +78,7 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	AGMUnit* CurrentUnit;
-
-	UPROPERTY(BlueprintReadOnly)
-	UGMGridPositionCoverCheckComponent* GridPositionCoverCheckComponent;
-
+	
 	UFUNCTION()
 	void TryAttackUnit();
 
@@ -132,6 +131,12 @@ public:
 	void RightMouseButton();
 
 	///////////////////////////////////////////
+
+	UFUNCTION()
+	void TryMoveUnit();
+
+	UFUNCTION(BlueprintCallable)
+	void MoveEnemyUnit(AGMUnit* Unit, FVector Position);
 
 	UFUNCTION()
 	void SelectUnit();	

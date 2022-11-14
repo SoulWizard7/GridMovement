@@ -16,21 +16,30 @@ protected:
 public:	
 	UGMAttackCalculatorComponent();
 
+	// THIS SCRIPT IS DEPRICATED
+	// ALL FUNCTIONALITY MOVED TO COMBAT UTILS SCRIPTS
+
 	// Components
 
 	UPROPERTY(BlueprintReadOnly)
 	UGMGridPositionCoverCheckComponent* GridPositionCoverCheckComponent;	
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Curves", meta = (DisplayName = "HitChanceCurve"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Curves", meta = (DisplayName = "HitChanceDistancePenaltyCurve"))
 	UCurveFloat* HitChanceCurve;	
 
 	//Functions
 
 	UFUNCTION(BlueprintCallable)
-	float CalculatePercentage(AGMUnit* attacker, AGMUnit* toAttack);
+	float CalculatePercentageOld(AGMUnit* attacker, AGMUnit* toAttack);
 
 	UFUNCTION(BlueprintCallable)
-	bool CanAttackUnit(AGMUnit* attacker, AGMUnit* toAttack);
+	bool CanAttackUnitOld(AGMUnit* attacker, AGMUnit* toAttack);
+
+	UFUNCTION(BlueprintCallable)
+	bool RollToHitOld(float HitChance);
+
+	UFUNCTION()
+	float RTCalculatePercentageOld(AGMUnit* attacker, AGMUnit* toAttack);
 
 
 	// Variables

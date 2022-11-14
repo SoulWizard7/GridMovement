@@ -52,17 +52,28 @@ void UGMUnitSelectorComponent::TryGetUnitCombat()
 		{
 			AGMUnit* Unit = Cast<AGMUnit>(GridMovementPlayerController->CurrentMousePositionHitResult.GetActor());
 			
-			if(!Unit->IsEnemy && Unit->hasAction || Unit->CurrentMovementUnits <= 0)
-			{				
-				if(IsValid(GridMovementPlayerController->CurrentUnit))
+			if(!Unit->IsEnemy)
+			{
+				if(Unit->hasAction || Unit->CurrentMovementUnits <= 0)
 				{
-					GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalDefault();
+					if(IsValid(GridMovementPlayerController->CurrentUnit))
+					{
+						GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalDefault();
+					}
+				
+					GridMovementPlayerController->CameraController->CenterOnUnit(Unit);
+				
+					GridMovementPlayerController->CurrentUnit = Unit;
+					GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
 				}
-				
-				GridMovementPlayerController->CameraController->CenterOnUnit(Unit);
-				
-				GridMovementPlayerController->CurrentUnit = Unit;
-				GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
+				else
+				{
+					GridMovementPlayerController->DeSelectUnit();
+				}
+			}
+			else
+			{
+				GridMovementPlayerController->DeSelectUnit();
 			}
 		}		
 	}
