@@ -85,10 +85,7 @@ bool CanAttackUnit(AGMUnit* attacker, FVector attackerPosition, AGMUnit* toAttac
 }
 
 float CalculatePercentage(AGMUnit* attacker, FVector attackerPosition, AGMUnit* toAttack, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes,	TArray<AActor*> ignoreActors)
-{
-	//bool canAttack = CanAttackUnit(attacker, toAttack, zOffset, World, TraceObjectTypes, ignoreActors);
-	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("CanAttack: %hhd"), canAttack) , true, FVector2D(1.f));
-	
+{	
 	float precentage = attacker->StartPercentage;
 
 	if(!CanAttackUnit(attacker, attackerPosition, toAttack, zOffset, World, TraceObjectTypes, ignoreActors))
@@ -146,8 +143,8 @@ float CalculatePercentage(AGMUnit* attacker, FVector attackerPosition, AGMUnit* 
 	// Calculate toAttack unit bonuses
 	precentage -= toAttack->DodgeBonus;
 
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("dist penalty: %f"), attacker->HitChanceCurve->GetFloatValue(distance/attacker->attackDistanceInMeter)) , true, FVector2D(1.f));
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("HitChance: %f"), precentage) , true, FVector2D(1.f));
+	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("dist penalty: %f"), attacker->HitChanceCurve->GetFloatValue(distance/attacker->attackDistanceInMeter)) , true, FVector2D(1.f));
+	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("HitChance: %f"), precentage) , true, FVector2D(1.f));
 	
 	return precentage;
 }

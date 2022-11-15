@@ -25,12 +25,14 @@ void UGMUnitSelectorComponent::TryGetUnit()
 				if(IsValid(GridMovementPlayerController->CurrentUnit))
 				{
 					GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalDefault();
+					GridMovementPlayerController->CurrentUnit->RebuildNavigation(true);
 				}
 
 				GridMovementPlayerController->CameraController->CenterOnUnit(Unit);
 				
 				GridMovementPlayerController->CurrentUnit = Unit;
 				GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
+				Unit->RebuildNavigation(false);
 			}
 			else
 			{
@@ -59,12 +61,14 @@ void UGMUnitSelectorComponent::TryGetUnitCombat()
 					if(IsValid(GridMovementPlayerController->CurrentUnit))
 					{
 						GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalDefault();
+						GridMovementPlayerController->CurrentUnit->RebuildNavigation(true);
 					}
 				
 					GridMovementPlayerController->CameraController->CenterOnUnit(Unit);
 				
 					GridMovementPlayerController->CurrentUnit = Unit;
 					GridMovementPlayerController->CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
+					Unit->RebuildNavigation(false);
 				}
 				else
 				{

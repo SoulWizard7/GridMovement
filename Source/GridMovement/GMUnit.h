@@ -48,8 +48,17 @@ public:
 	
 	/// Stuff
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void MoveToLocation(FVector NewLocation);
+
+	UFUNCTION(BlueprintCallable)
+	void MovePlayerUnitToLocation(FVector NewLocation);
+
+	UFUNCTION(BlueprintCallable)
+	void MoveEnemyUnitToLocation(FVector NewLocation);
+
+	UFUNCTION(BlueprintCallable)
+	void RebuildNavigation(bool canAffect);
 
 	UFUNCTION(BlueprintCallable)
 	void DebugCover();
@@ -103,20 +112,26 @@ public:
 	UFUNCTION()
 	void UnitIsBusy(bool Action);
 
-	UPROPERTY()
+	UFUNCTION(BlueprintCallable)
+	void UnitIsDoneWithAction();
+
+	UPROPERTY(BlueprintReadOnly)
 	bool WaitForUnit = false;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	bool UnitIsBusyWithAction = false;
 
 	UPROPERTY()
 	float UnitIsBusyTimer = 0.f;
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void RegainActions();
 
-	UFUNCTION()
-	void AttackUnit(AGMUnit* UnitToAttack);
+	UFUNCTION(BlueprintCallable)
+	void AttackUnit(AGMUnit* UnitToAttack, float HitChance);
+
+	UFUNCTION(BlueprintCallable)
+	float GetHitChancePercentage(AGMUnit* UnitToAttack);
 
 	// RealTime combat Functions & Variables
 
@@ -131,6 +146,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void RTAttack(AGMUnit* toAttack, bool hit);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void Attack(AGMUnit* toAttack, bool hit);
 
 	UPROPERTY()
 	float RTShootTimer;

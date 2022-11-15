@@ -44,4 +44,7 @@ public:
 
 	UFUNCTION()
 	void CombatEnemyTurnStart();
+
+	UFUNCTION(BlueprintCallable)
+	void EnemyDidAction();
 };

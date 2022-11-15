@@ -54,6 +54,14 @@ void UGMCombatEnemyTurn::CombatEnemyTurnStart()
 	ExecuteEnemyTurn = true;
 }
 
+void UGMCombatEnemyTurn::EnemyDidAction()
+{
+	for (AGMUnit* Unit : CombatManager->PlayerUnits)
+	{
+		Unit->RTFindCurrentTarget();
+	}
+}
+
 int UGMCombatEnemyTurn::GetEnemyIndexMax()
 {
 	return CombatManager->EnemyUnits.Num() - 1;

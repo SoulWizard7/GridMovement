@@ -123,6 +123,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void EnablePlayerInput();
+
+	UFUNCTION(BlueprintCallable)
+	void DisablePlayerInput();
 	
 	UFUNCTION()
 	void LeftMouseButton();
@@ -134,9 +137,6 @@ public:
 
 	UFUNCTION()
 	void TryMoveUnit();
-
-	UFUNCTION(BlueprintCallable)
-	void MoveEnemyUnit(AGMUnit* Unit, FVector Position);
 
 	UFUNCTION()
 	void SelectUnit();	

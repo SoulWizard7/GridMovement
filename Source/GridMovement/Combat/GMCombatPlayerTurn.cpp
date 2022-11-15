@@ -9,6 +9,7 @@ UGMCombatPlayerTurn::UGMCombatPlayerTurn()
 
 void UGMCombatPlayerTurn::CombatPlayerTurnStart()
 {
+	CombatManager->GridMovementPlayerController->EnablePlayerInput();
 	for (AGMUnit* Unit : CombatManager->PlayerUnits)
 	{
 		Unit->RegainActions();
@@ -24,9 +25,9 @@ void UGMCombatPlayerTurn::CombatPlayerTurn()
 
 void UGMCombatPlayerTurn::EndTurn()
 {
-
 	//TODO wait until input is enabled
 	
+	CombatManager->GridMovementPlayerController->DisablePlayerInput();
 	CombatManager->SetState(States::EnemyTurnStart);
 }
 

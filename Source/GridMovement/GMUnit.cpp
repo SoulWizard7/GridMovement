@@ -2,6 +2,7 @@
 #include "GMUnit.h"
 
 #include "GMAttackCalculatorComponent.h"
+#include "NavigationSystem.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Combat/GMCombatManager.h"
 #include "Combat/GMCombatUtils.h"
@@ -49,33 +50,39 @@ void AGMUnit::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	
-
 	if(WaitForUnit)
 	{
-		while(GetVelocity().Length() > .1f)
-		{
-			return;
-		}
-		
-		while(UnitIsBusyWithAction)
-		{
-			return;
-		}
-	
 		while(UnitIsBusyTimer>0)
 		{
 			UnitIsBusyTimer -= DeltaSeconds;
 			return;
 		}
+		
+		while(GetVelocity().Length() > .1f) //While moving
+		{
+			return;
+		}	
+		
+		while(UnitIsBusyWithAction) //Wait for action to finish (NO IMPLEMENTATION YET)
+		{
+			return;
+		}
 
-		GridMovementPlayerController->EnablePlayerInput();
+		SetCurrentCoverFromCurrentPosition();
 		
 		if(IsValid(CombatManager))
-		{
+		{			
 			CombatManager->CombatPlayerTurn->PlayerDidAction();
-		}
+			CombatManager->CombatEnemyTurn->EnemyDidAction();
 			
+			if(CombatManager->CombatState == States::PlayerTurn)
+			{
+				GridMovementPlayerController->EnablePlayerInput();
+			}/*
+			else if(CombatManager->CombatState == States::EnemyTurn)
+			{
+			}*/
+		}			
 		WaitForUnit = false;
 	}
 	else
@@ -89,7 +96,7 @@ void AGMUnit::Tick(float DeltaSeconds)
 				if(RTCurrentTarget != nullptr)
 				{
 					//RTAttack(RTCurrentTarget, AttackCalculator->RollToHitOld(AttackCalculator->RTCalculatePercentageOld(this, RTCurrentTarget)));
-					RTAttack(RTCurrentTarget, AttackCalculator->RollToHitOld(RTCalculatePercentage(this, this->GetActorLocation(), RTCurrentTarget, 25.f, GetWorld(), TraceObjectTypes, ignoreActors)));
+					RTAttack(RTCurrentTarget, RollToHit(GetHitChancePercentage(RTCurrentTarget)));
 					RTShootTimerReset();
 				}
 			}
@@ -137,15 +144,48 @@ void AGMUnit::SetCurrentCoverFromCurrentPosition()
 	FVector pos = GetActorLocation();
 	pos.Z -= 80.f;
 	CurrentCover = GridMovementPlayerController->GridPositionCoverCheckComponent->CheckGridPositionForCover(pos, ignoreActors);
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.f, FColor::Orange, FString::Printf(TEXT("Checked cover at: %ls"), *pos.ToString()), false, FVector2D(1.f));
-
 }
 
 void AGMUnit::UnitIsBusy(bool Action)
 {
 	UnitIsBusyWithAction = Action;
 	WaitForUnit = true;
-	UnitIsBusyTimer = 0.2f;	
+	UnitIsBusyTimer = 1.f;	
+}
+
+void AGMUnit::UnitIsDoneWithAction()
+{
+	UnitIsBusyWithAction = false;
+}
+
+void AGMUnit::MovePlayerUnitToLocation(FVector NewLocation)
+{
+	if(IsInCombat)
+	{
+		UnitIsBusy(false);
+		CurrentMovementUnits = 0;		
+	}
+	MoveToLocation(NewLocation);
+}
+
+void AGMUnit::MoveEnemyUnitToLocation(FVector NewLocation)
+{
+	UnitIsBusy(false);
+	CurrentMovementUnits = 0;
+	MoveToLocation(NewLocation);
+}
+
+void AGMUnit::RebuildNavigation(bool canAffect)
+{
+	SetCanAffectNavigationGeneration(canAffect);
+	UNavigationSystemV1* navigation_system = UNavigationSystemV1::GetCurrent(GetWorld());
+	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.f, FColor::Orange, FString::Printf(TEXT("Checked cover at: %ls"), *navigation_system->GetName()), false, FVector2D(1.f));
+	
+	if (navigation_system)
+	{
+		navigation_system->Build();
+		//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.f, FColor::Orange, FString::Printf(TEXT("REBUILD NAVMESH")), false, FVector2D(1.f));
+	}
 }
 
 void AGMUnit::RegainActions()
@@ -153,16 +193,20 @@ void AGMUnit::RegainActions()
 	// check if unit has conditions that disables actions
 
 	CurrentMovementUnits = MaxMovementUnits;
-	hasAction = true;
-	
+	hasAction = true;	
 }
 
-void AGMUnit::AttackUnit(AGMUnit* UnitToAttack)
+void AGMUnit::AttackUnit(AGMUnit* UnitToAttack, float HitChance)
 {
 	hasAction = false;
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.f, FColor::Yellow, "Current Hovered Unit is: " + UnitToAttack->GetName(), true, FVector2D(1.f));
-		
-	UnitIsBusyWithAction = false;	
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.f, FColor::Yellow, "Attacking Unit: " + UnitToAttack->GetName(), true, FVector2D(1.f));
+	RTShootTimer += 5.f;
+	Attack(UnitToAttack, RollToHit(HitChance));	
+}
+
+float AGMUnit::GetHitChancePercentage(AGMUnit* UnitToAttack)
+{
+	return CalculatePercentage(this, GetActorLocation(), UnitToAttack, 25.f, GetWorld(), TraceObjectTypes, ignoreActors);
 }
 
 void AGMUnit::RTFindCurrentTarget()

@@ -54,22 +54,13 @@ void AGridMovementPlayerController::TryMoveUnit()
 
 		if (PathToCurrentMouseGridPosition.Num() >= 1)
 		{
-			DisableInput(this);
-			CurrentUnit->UnitIsBusy(false);
-			CurrentUnit->CurrentCover = GridPositionCoverCheckComponent->CurrentMousePositionCover;
-			CurrentUnit->CurrentMovementUnits = 0;
-			CurrentUnit->MoveToLocation(CurrentMouseGridPosition);			
+			DisablePlayerInput();
+			
+			CurrentUnit->MovePlayerUnitToLocation(CurrentMouseGridPosition);
+			
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CurrentMouseGridPosition, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
 		}
 	}
-}
-
-void AGridMovementPlayerController::MoveEnemyUnit(AGMUnit* Unit, FVector Position)
-{	
-	Unit->UnitIsBusy(false);
-	Unit->CurrentCover = GridPositionCoverCheckComponent->CheckGridPositionForCover(Position, GridPositionCoverCheckComponent->ComponentSetIgnoreActors);
-	Unit->CurrentMovementUnits = 0;
-	Unit->MoveToLocation(Position);
 }
 
 void AGridMovementPlayerController::StartCombat()
@@ -98,20 +89,6 @@ void AGridMovementPlayerController::CombatManagerEndPlayerTurn()
 	}	
 }
 
-void AGridMovementPlayerController::TryAttackUnit()
-{
-	if(CurrentUnit == nullptr) return;
-	if(!CurrentUnit->hasAction) return;
-	
-	if(IsValid(CurrentHoveredUnit))
-	{
-		if(CurrentHoveredUnit->IsEnemy)
-		{
-			CurrentUnit->UnitIsBusy(true);
-			CurrentUnit->AttackUnit(CurrentHoveredUnit);
-		}
-	}
-}
 
 void AGridMovementPlayerController::MarkUnitsOnHover()
 {
@@ -119,11 +96,12 @@ void AGridMovementPlayerController::MarkUnitsOnHover()
 
 	if(CurrentHoveredUnit != nullptr)
 	{		
-		if(CurrentUnit != nullptr)	AttackCalculatorComponent->CalculatePercentageOld(CurrentUnit, CurrentHoveredUnit);
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Yellow, "Current Hovered Unit is: " + CurrentHoveredUnit->GetName(), true, FVector2D(1.f));
-		
-	}
-	
+		if(CurrentUnit != nullptr)
+		{			
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, "Current Hovered Unit is: " + CurrentHoveredUnit->GetName(), true, FVector2D(1.f));
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("HitChance of current hovered unit: %f"), CurrentUnit->GetHitChancePercentage(CurrentHoveredUnit)), false, FVector2D(1.f));
+		}	
+	}	
 
 	if (CurrentMousePositionHitResult.GetActor())
 	{
@@ -168,6 +146,11 @@ void AGridMovementPlayerController::EnablePlayerInput()
 	EnableInput(this);
 }
 
+void AGridMovementPlayerController::DisablePlayerInput()
+{
+	DisableInput(this);
+}
+
 void AGridMovementPlayerController::LeftMouseButton()
 {
 	SelectUnit();
@@ -185,6 +168,25 @@ void AGridMovementPlayerController::RightMouseButton()
 	}	
 }
 
+void AGridMovementPlayerController::TryAttackUnit()
+{
+	if(CurrentUnit == nullptr) return;
+	if(!CurrentUnit->hasAction) return;
+	
+	if(IsValid(CurrentHoveredUnit))
+	{
+		if(CurrentHoveredUnit->IsEnemy)
+		{
+			float percentage = CurrentUnit->GetHitChancePercentage(CurrentHoveredUnit);
+			if (percentage != 0)
+			{
+				CurrentUnit->UnitIsBusy(true);
+				CurrentUnit->AttackUnit(CurrentHoveredUnit, percentage);
+			}			
+		}		
+	}
+}
+
 void AGridMovementPlayerController::SelectUnit()
 {
 	if(CombatIsOn)
@@ -197,17 +199,22 @@ void AGridMovementPlayerController::SelectUnit()
 	}	
 }
 
-void AGridMovementPlayerController::SelectUnit(AGMUnit* Unit)
+void AGridMovementPlayerController::SelectUnit(AGMUnit* Unit) //Combat manager uses this function
 {
 	DeSelectUnit();
 	CurrentUnit = Unit;
+	CurrentUnit->RebuildNavigation(false);
 	CurrentUnit->UnitGroundMarkerController->SetDecalSelected();
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.0f, FColor::Blue, FString::Printf(TEXT("Select Unit w overload")), false, FVector2D(1.f));
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 3.0f, FColor::Blue, FString::Printf(TEXT("Selected new Unit from combat manager")), false, FVector2D(1.f));
 }
 
 void AGridMovementPlayerController::DeSelectUnit()
 {
-	if(IsValid(CurrentUnit)) CurrentUnit->FindComponentByClass<UGMUnitGroundMarkerComponent>()->SetDecalDefault();
+	if(IsValid(CurrentUnit))
+	{
+		CurrentUnit->FindComponentByClass<UGMUnitGroundMarkerComponent>()->SetDecalDefault();
+		CurrentUnit->RebuildNavigation(true);
+	}
 	CurrentUnit = nullptr;
 }
 
@@ -236,8 +243,6 @@ void AGridMovementPlayerController::SetCurrentMouseGridPosition()
 	if (CurrentMouseGridPosition.Size2D() != LastMouseGridPosition.Size2D() || CurrentMouseGridPosition.Z != LastMouseGridPosition.Z)
 	{
 		LastMouseGridPosition = CurrentMouseGridPosition;
-		//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.f, FColor::White, "NewPosition", true, FVector2D(1.f));
-
 		GridPositionCoverCheckComponent->DeactivateAllCoverBools();
 		CoverIconDisplay->DisplayCoverIcons(GridPositionCoverCheckComponent->CurrentMousePositionCover, CurrentMouseGridPosition);
 
