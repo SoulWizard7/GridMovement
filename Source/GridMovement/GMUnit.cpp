@@ -72,16 +72,15 @@ void AGMUnit::Tick(float DeltaSeconds)
 		
 		if(IsValid(CombatManager))
 		{			
-			CombatManager->CombatPlayerTurn->PlayerDidAction();
-			CombatManager->CombatEnemyTurn->EnemyDidAction();
-			
 			if(CombatManager->CombatState == States::PlayerTurn)
 			{
 				GridMovementPlayerController->EnablePlayerInput();
-			}/*
+				CombatManager->CombatPlayerTurn->PlayerDidAction();
+			}
 			else if(CombatManager->CombatState == States::EnemyTurn)
 			{
-			}*/
+				CombatManager->CombatEnemyTurn->EnemyDidAction();
+			}
 		}			
 		WaitForUnit = false;
 	}
