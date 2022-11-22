@@ -5,6 +5,11 @@
 #include "GridMovement/GMHalfCoverComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
+bool UGMCombatUtils::test123()
+{
+	return true;
+}
+
 FVector RoundVectorXY(FVector toRound)
 {
 	float x = toRound.X / 100;
@@ -16,114 +21,299 @@ FVector RoundVectorXY(FVector toRound)
 	return toRound;
 }
 
-bool CanAttackUnit(AGMUnit* attacker, FVector attackerPosition, AGMUnit* toAttack, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes, TArray<AActor*> ignoreActors)
-{
-	FVector selfPosition = RoundVectorXY(attackerPosition);
+bool CanAttackUnit(FCardinalPosition CardinalPosition, FVector attackerPosition, AGMUnit* toAttack, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes, TArray<AActor*> ignoreActors)
+{	
 	FVector toAttackPosition = RoundVectorXY(toAttack->GetActorLocation());
 
 	//if(selfPosition.X == toAttackPosition.X || selfPosition.Y == toAttackPosition.Y) return false; //Should player be able to shoot from direct line with fullcover?
+
+	// NOTE: the value of 110 ensures that unit can peak around corner
 	
-	if(selfPosition.X - 10 > toAttackPosition.X)
+	if(attackerPosition.X - 110 > toAttackPosition.X) //unit is North of its enemy
 	{
 		if(toAttack->CurrentCover.NorthFullCover)
 		{
-			if (selfPosition.Y - 10 > toAttackPosition.Y)
+			if (CardinalPosition.East) //unit is East of its enemy
 			{
-				return CheckPosAndDirForFullCover(toAttackPosition + FVector::RightVector * 100, FVector::ForwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C1")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::RightVector * 100, FVector::ForwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
 			}
-			
-			if (selfPosition.Y + 10 < toAttackPosition.Y)
+			if (CardinalPosition.West) //unit is West of its enemy
 			{
-				return CheckPosAndDirForFullCover(toAttackPosition + FVector::LeftVector * 100, FVector::ForwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C2")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::LeftVector * 100, FVector::ForwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
 			}
 		}
 	}
 	
-	if (selfPosition.X + 10 < toAttackPosition.X)
+	if (attackerPosition.X + 110 < toAttackPosition.X) //unit is South of its enemy
 	{		
 		if(toAttack->CurrentCover.SouthFullCover)
 		{
-			if (selfPosition.Y - 10 > toAttackPosition.Y)
+			if (CardinalPosition.East) //unit is East of its enemy
 			{
-				return CheckPosAndDirForFullCover(toAttackPosition + FVector::RightVector * 100, FVector::BackwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C3")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::RightVector * 100, FVector::BackwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
 			}
 			
-			if (selfPosition.Y + 10 < toAttackPosition.Y)
+			if (CardinalPosition.West) //unit is West of its enemy
 			{
-				return CheckPosAndDirForFullCover(toAttackPosition + FVector::LeftVector * 100, FVector::BackwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C4")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::LeftVector * 100, FVector::BackwardVector, zOffset, World, TraceObjectTypes, ignoreActors);
 			}
 		}
 	}
 	
-	if (selfPosition.Y - 10 > toAttackPosition.Y)
+	if (attackerPosition.Y - 110 > toAttackPosition.Y) //unit is East of its enemy
 	{		
-		if(toAttack->CurrentCover.EastFullCover)
+		if(toAttack->CurrentCover.EastFullCover) 
 		{
-			if(selfPosition.X - 10 > toAttackPosition.X)
+			if(CardinalPosition.North) //unit is North of its enemy
 			{
-				return CheckPosAndDirForFullCover(toAttackPosition + FVector::ForwardVector * 100, FVector::RightVector, zOffset, World, TraceObjectTypes, ignoreActors);
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C5")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::ForwardVector * 100, FVector::RightVector, zOffset, World, TraceObjectTypes, ignoreActors);
 			}
-			if (selfPosition.X + 10 < toAttackPosition.X)
+			if (CardinalPosition.South) //unit is South of its enemy
 			{
-				return CheckPosAndDirForFullCover(toAttackPosition + FVector::BackwardVector * 100, FVector::RightVector, zOffset, World, TraceObjectTypes, ignoreActors);
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C6")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::BackwardVector * 100, FVector::RightVector, zOffset, World, TraceObjectTypes, ignoreActors);
 			}
 		}
 	}
-	else if (selfPosition.Y + 10 < toAttackPosition.Y)
-	{		
-		if(selfPosition.X - 10 > toAttackPosition.X)
+	else if (attackerPosition.Y + 110 < toAttackPosition.Y) //unit is West of its enemy
+	{
+		if(toAttack->CurrentCover.WestFullCover)
 		{
-			return CheckPosAndDirForFullCover(toAttackPosition + FVector::ForwardVector * 100, FVector::LeftVector, zOffset, World, TraceObjectTypes, ignoreActors);
-		}
-		if (selfPosition.X + 10 < toAttackPosition.X)
-		{
-			return CheckPosAndDirForFullCover(toAttackPosition + FVector::BackwardVector * 100, FVector::LeftVector, zOffset, World, TraceObjectTypes, ignoreActors);
-		}
+			if(CardinalPosition.North) //unit is North of its enemy
+			{
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C7")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::ForwardVector * 100, FVector::LeftVector, zOffset, World, TraceObjectTypes, ignoreActors);
+			}
+			if (CardinalPosition.South) //unit is South of its enemy
+			{
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("C8")), true, FVector2D(1.f));
+				return !CheckPosAndDirForFullCover(toAttackPosition + FVector::BackwardVector * 100, FVector::LeftVector, zOffset, World, TraceObjectTypes, ignoreActors);
+			}
+		}		
 	}
 
 	return true;
 }
 
 float CalculatePercentage(AGMUnit* attacker, FVector attackerPosition, AGMUnit* toAttack, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes,	TArray<AActor*> ignoreActors)
-{	
-	float precentage = attacker->StartPercentage;
+{
+	FCardinalPosition CardinalPosition = {};
+	FVector selfPosition = RoundVectorXY(attackerPosition);
+	FVector toAttackPosition = RoundVectorXY(toAttack->GetActorLocation());
 
-	if(!CanAttackUnit(attacker, attackerPosition, toAttack, zOffset, World, TraceObjectTypes, ignoreActors))
+	if (selfPosition.X - 10 > toAttackPosition.X) //unit is North of its enemy
 	{
+		CardinalPosition.North = true;
+	}
+	else if (selfPosition.X + 10 < toAttackPosition.X) //unit is South of its enemy
+	{
+		CardinalPosition.South = true;
+	}
+
+	if (selfPosition.Y - 10 > toAttackPosition.Y) //unit is East of its enemy
+	{
+		CardinalPosition.East = true;
+	}
+	else if (selfPosition.Y + 10 < toAttackPosition.Y) //unit is West of its enemy
+	{
+		CardinalPosition.West = true;
+	}
+	
+	if(!CanAttackUnit(CardinalPosition, selfPosition, toAttack, zOffset, World, TraceObjectTypes, ignoreActors))
+	{		
 		return 0.f;		
 	}
-	
-	FVector selfPosition = RoundVectorXY(attackerPosition);
-	FVector toAttackPosition = RoundVectorXY(toAttack->GetActorLocation());	
 
 	//Find if UnitToAttack has cover
-	bool hasHalfCover = false;
-	bool hasFullCover = false;
+	bool EnemyHasHalfCover = false;
+	bool EnemyHasFullCover = false;
+	bool AttackerHasLOS = false;
+	bool AttackerHasFlank = false;
 
-	if(selfPosition.X - 10 > toAttackPosition.X)
-	{
-		if(toAttack->CurrentCover.NorthHalfCover) hasHalfCover = true;
-		if(toAttack->CurrentCover.NorthFullCover) hasFullCover = true;
+	if(CardinalPosition.North) //unit is North of its enemy
+	{		
+		if(attacker->CurrentCover.SouthFullCover || attacker->CurrentCover.SouthHalfCover)
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("Unit is standing in cover to south")), true, FVector2D(1.f));
+						
+			if(!CheckPosAndDirForFullCover(attackerPosition + FVector::LeftVector * 100, FVector::BackwardVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::LeftVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("B1")), true, FVector2D(1.f));
+			
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.NorthHalfCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.NorthFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;				
+			}
+			if(!AttackerHasFlank && !CheckPosAndDirForFullCover(attackerPosition + FVector::RightVector * 100, FVector::BackwardVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::RightVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("B2")), true, FVector2D(1.f));
+			
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.NorthHalfCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.NorthFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;	
+			}			
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("A1")), true, FVector2D(1.f));
+
+			if(toAttack->CurrentCover.NorthHalfCover) EnemyHasHalfCover = true;
+			if(toAttack->CurrentCover.NorthFullCover) EnemyHasFullCover = true;
+		}		
 	}
-	else if (selfPosition.X - 10 < toAttackPosition.X)
+	else if (CardinalPosition.South) //unit is South of its enemy
 	{
-		if(toAttack->CurrentCover.SouthHalfCover) hasHalfCover = true;
-		if(toAttack->CurrentCover.SouthFullCover) hasFullCover = true;
+		if(attacker->CurrentCover.NorthFullCover || attacker->CurrentCover.NorthHalfCover)
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("Unit is standing in cover to north")), true, FVector2D(1.f));
+						
+			if(!CheckPosAndDirForFullCover(attackerPosition + FVector::LeftVector * 100, FVector::ForwardVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::LeftVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.SouthHalfCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.SouthFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;
+			}
+			if(!AttackerHasFlank && !CheckPosAndDirForFullCover(attackerPosition + FVector::RightVector * 100, FVector::ForwardVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::RightVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.SouthHalfCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.SouthFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;
+			}
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("A2")), true, FVector2D(1.f));
+			if(toAttack->CurrentCover.SouthHalfCover) EnemyHasHalfCover = true;
+			if(toAttack->CurrentCover.SouthFullCover) EnemyHasFullCover = true;
+		}		
 	}
 	
-	if (selfPosition.Y - 10 > toAttackPosition.Y)
+	if (!AttackerHasFlank && CardinalPosition.East) //unit is East of its enemy
 	{
-		if(toAttack->CurrentCover.EastHalfCover) hasHalfCover = true;
-		if(toAttack->CurrentCover.EastFullCover) hasFullCover = true;
+		if(attacker->CurrentCover.WestFullCover || attacker->CurrentCover.WestHalfCover)
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("Unit is standing in cover to west")), true, FVector2D(1.f));
+						
+			if(!CheckPosAndDirForFullCover(attackerPosition + FVector::ForwardVector * 100, FVector::LeftVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::ForwardVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.EastHalfCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.EastFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;
+			}
+			if(!AttackerHasFlank && !CheckPosAndDirForFullCover(attackerPosition + FVector::BackwardVector * 100, FVector::LeftVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::BackwardVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.EastHalfCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.EastFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;
+			}			
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("A3")), true, FVector2D(1.f));
+			if(toAttack->CurrentCover.EastHalfCover) EnemyHasHalfCover = true;
+			if(toAttack->CurrentCover.EastFullCover) EnemyHasFullCover = true;
+		}
 	}
-	else if (selfPosition.Y - 10 < toAttackPosition.Y)
+	else if (!AttackerHasFlank && CardinalPosition.West) //unit is West of its enemy
 	{
-		if(toAttack->CurrentCover.WestFullCover) hasHalfCover = true;
-		if(toAttack->CurrentCover.WestFullCover) hasFullCover = true;
+		if(attacker->CurrentCover.EastFullCover || attacker->CurrentCover.EastHalfCover)
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("Unit is standing in cover to east")), true, FVector2D(1.f));
+						
+			if(!CheckPosAndDirForFullCover(attackerPosition + FVector::ForwardVector * 100, FVector::RightVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::ForwardVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.WestFullCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.WestFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;
+			}
+			if(!AttackerHasFlank && !CheckPosAndDirForFullCover(attackerPosition + FVector::BackwardVector * 100, FVector::RightVector, zOffset, World, TraceObjectTypes, ignoreActors) &&
+				HasLineOfSight(attackerPosition + FVector::BackwardVector * 100, toAttack->GetActorLocation(), zOffset, World, TraceObjectTypes, ignoreActors))
+			{
+				AttackerHasLOS = true;
+				if(toAttack->CurrentCover.WestFullCover) EnemyHasHalfCover = true;
+				if(toAttack->CurrentCover.WestFullCover) EnemyHasFullCover = true;
+				if(!EnemyHasFullCover || !EnemyHasHalfCover) AttackerHasFlank = true;
+			}			
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Magenta, FString::Printf(TEXT("A4")), true, FVector2D(1.f));
+			if(toAttack->CurrentCover.WestFullCover) EnemyHasHalfCover = true;
+			if(toAttack->CurrentCover.WestFullCover) EnemyHasFullCover = true;
+		}
+	}
+	
+	if(!AttackerHasFlank && !AttackerHasLOS)
+	{
+		if(CardinalPosition.North && HasLineOfSight(attackerPosition, toAttackPosition + FVector::ForwardVector * 51, zOffset, World, TraceObjectTypes, ignoreActors))
+		{
+			AttackerHasLOS = true;
+		}
+		else if(CardinalPosition.South && HasLineOfSight(attackerPosition, toAttackPosition + FVector::BackwardVector * 51, zOffset, World, TraceObjectTypes, ignoreActors))
+		{
+			AttackerHasLOS = true;
+		}
+
+		if(!AttackerHasLOS && CardinalPosition.East && HasLineOfSight(attackerPosition, toAttackPosition + FVector::RightVector * 51, zOffset, World, TraceObjectTypes, ignoreActors))
+		{
+			AttackerHasLOS = true;
+		}
+		else if(!AttackerHasLOS && CardinalPosition.West && HasLineOfSight(attackerPosition, toAttackPosition + FVector::LeftVector * 51, zOffset, World, TraceObjectTypes, ignoreActors))
+		{
+			AttackerHasLOS = true;
+		}		
 	}
 
-	if(hasFullCover) precentage -= toAttack->FullCoverBonus ;
-	else if(hasHalfCover) precentage -= toAttack->HalfCoverBonus;
+	//Start calculating bonuses & penalties
+	
+	float precentage = attacker->StartPercentage;
+
+	if(AttackerHasLOS)
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Red, FString::Printf(TEXT("UnitToAttack has LOS")), true, FVector2D(1.f));
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Red, FString::Printf(TEXT("UnitToAttack has NO LOS")), true, FVector2D(1.f));
+		return 0;
+	}
+
+	if(AttackerHasFlank)
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Red, FString::Printf(TEXT("UnitToAttack has FLANK")), true, FVector2D(1.f));
+	}
+	else
+	{
+		if (EnemyHasFullCover)
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Red, FString::Printf(TEXT("UnitToAttack has FULL cover")), true, FVector2D(1.f));
+			precentage -= toAttack->FullCoverBonus;
+		}
+		else if (EnemyHasHalfCover)
+		{
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Red, FString::Printf(TEXT("UnitToAttack has HALF cover")), true, FVector2D(1.f));
+			precentage -= toAttack->HalfCoverBonus;		
+		}
+	}
 
 	//Calculate distance penalty
 
@@ -149,6 +339,38 @@ float CalculatePercentage(AGMUnit* attacker, FVector attackerPosition, AGMUnit* 
 	return precentage;
 }
 
+bool HasLineOfSight(FVector StartPos, FVector EndPos, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes, TArray<AActor*> ignoreActors)
+{
+	TArray<FVector> PositionsToCheck;
+	FVector Direction = EndPos - StartPos;
+	Direction.Normalize();
+	
+	float RemainingDistance = FVector::Dist2D(StartPos, EndPos);
+	RemainingDistance -= 200;
+		
+	while (RemainingDistance > 200)
+	{
+		FVector NewPos = StartPos + Direction * RemainingDistance;
+		NewPos = RoundVectorXY(NewPos);
+		if(!PositionsToCheck.Contains(NewPos))
+		{
+			PositionsToCheck.Add(NewPos);
+		}
+		RemainingDistance -= 100;
+	}
+
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Green, FString::Printf(TEXT("LOS checked %d positions"), PositionsToCheck.Num()) , true, FVector2D(1.f));
+
+	for (FVector ToCheck : PositionsToCheck)
+	{
+		if(CheckPosForFullCover(ToCheck, zOffset, World, TraceObjectTypes, ignoreActors))
+		{
+			return false;
+		}
+	}	
+	return true;	
+}
+
 bool RollToHit(float HitChance)
 {
 	float roll = FMath::RandRange(0, 100);
@@ -165,7 +387,6 @@ float RTCalculatePercentage(AGMUnit* attacker, FVector attackerPosition, AGMUnit
 }
 
 bool CheckPosAndDirForCover(FVector Position, FVector Direction, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes, TArray<AActor*> ignoreActors)
-
 {
 	FHitResult Hit;
 	
@@ -214,8 +435,33 @@ bool CheckPosAndDirForFullCover(FVector Position, FVector Direction, float zOffs
 	{
 		if(Hit.GetActor()->FindComponentByClass<UGMFullCoverComponent>())
 		{
-			return false;
+			return true;
 		}		
 	}
-	return true;
+	return false;
+}
+
+bool CheckPosForFullCover(FVector Position, float zOffset, UWorld* World, TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes, TArray<AActor*> ignoreActors)
+{
+	FHitResult Hit;
+	
+	UKismetSystemLibrary::LineTraceSingleForObjects(World,
+		FVector(Position.X, Position.Y, Position.Z + zOffset + 250.f),
+		FVector(Position.X, Position.Y, Position.Z + zOffset),
+		TraceObjectTypes,
+		false,
+		ignoreActors,
+		EDrawDebugTrace::None,
+		Hit,
+		true,
+		FLinearColor::Red,FLinearColor::Green,2);
+
+	if(Hit.bBlockingHit)
+	{
+		if(Hit.GetActor()->FindComponentByClass<UGMFullCoverComponent>())
+		{
+			return true;
+		}	
+	}
+	return false;
 }
