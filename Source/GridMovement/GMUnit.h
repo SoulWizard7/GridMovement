@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GMAIController.h"
 #include "GMGridPositionCoverCheckComponent.h"
+#include "Equipment/GMEquipmentBase.h"
 #include "GameFramework/Character.h"
 #include "UnitComponents/GMUnitGroundMarkerComponent.h"
 #include "GMUnit.generated.h"
@@ -177,4 +178,11 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float attackDistanceInMeter = 25.f;
 
+	// Unit Equipment
+
+	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
+	AGMEquipmentBase* SideWeapon;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
+	AGMEquipmentBase* MainWeapon;
 };
